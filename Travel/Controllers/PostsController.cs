@@ -22,5 +22,17 @@ namespace TravelApi.Controllers
             }
             return Ok(result.Data);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllPosts()
+        {
+            var query = new Application.Posts.Queries.GetAllPostsQuery();
+            var result = await _mediator.Send(query);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { error = result.Error });
+            }
+            return Ok(result.Data);
+        }
     }
 }
