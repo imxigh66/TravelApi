@@ -1,4 +1,5 @@
-﻿using Application.DTO.Posts;
+﻿using Application.Common.Models;
+using Application.DTO.Posts;
 using MediatR;
 using System;
 using System.Collections.Generic;

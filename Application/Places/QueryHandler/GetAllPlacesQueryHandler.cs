@@ -1,4 +1,5 @@
 ﻿using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Places;
 using Application.Places.Queries;
 using MediatR;
@@ -34,11 +35,8 @@ namespace Application.Places.QueryHandler
                     CreatedAt = p.CreatedAt
                 })
                 .ToListAsync(cancellationToken);
-            return new OperationResult<List<PlaceDto>>
-            {
-                IsSuccess = true,
-                Data = places
-            };
+            return  OperationResult<List<PlaceDto>>.Success(places);
+          
         }
     }
 }

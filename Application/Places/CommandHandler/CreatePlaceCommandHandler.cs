@@ -1,4 +1,5 @@
 ﻿using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Auth;
 using Application.DTO.Places;
 using Application.Places.Commands;
@@ -44,11 +45,9 @@ namespace Application.Places.CommandHandler
             _context.Places.Add(place);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new OperationResult<PlaceDto>
+            return  OperationResult<PlaceDto>.Success(new PlaceDto
             {
-                IsSuccess = true,
-                Data = new PlaceDto
-                {
+              
                     PlaceId = place.PlaceId,
                     Name = place.Name,
                     Description = place.Description,
@@ -57,8 +56,8 @@ namespace Application.Places.CommandHandler
                     Address = place.Address,
                     PlaceType = place.PlaceType,
                     CreatedAt = place.CreatedAt
-                }
-            };
+                
+            });
         }
     }
 }

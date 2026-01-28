@@ -1,5 +1,6 @@
 ﻿using Application.Auth.Register.Commands;
 using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Auth;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -47,17 +48,15 @@ namespace Application.Auth.Register.CommandHandler
             _ctx.Users.Add(user);
             await _ctx.SaveChangesAsync(cancellationToken);
 
-            return new OperationResult<RegisterResponse>
+            return  OperationResult<RegisterResponse>.Success(new RegisterResponse
             {
-                IsSuccess = true,
-                Data = new RegisterResponse
-                {
+               
                     UserId = user.UserId,
                     Username = user.Username,
                     Email = user.Email,
                     Name = user.Name
-                }
-            };
+                
+            });
         }
     }
 }

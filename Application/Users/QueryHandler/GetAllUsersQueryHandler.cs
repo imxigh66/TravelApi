@@ -1,6 +1,7 @@
-﻿using Application.DTO.Users;
+﻿using Application.Common.Interfaces;
+using Application.Common.Models;
+using Application.DTO.Users;
 using Application.Users.Queries;
-using Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,8 +14,8 @@ namespace Application.Users.QueryHandler
 {
     public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, OperationResult<List<UserDto>>>
     {
-        private readonly TravelDbContext _context;
-        public GetAllUsersQueryHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        public GetAllUsersQueryHandler(IApplicationDbContext context)
         {
             _context = context;
         }
@@ -31,11 +32,8 @@ namespace Application.Users.QueryHandler
                 UpdatedAt = user.UpdatedAt
             }).ToListAsync(cancellationToken);
 
-            return new OperationResult<List<UserDto>>
-            {
-                IsSuccess = true,
-                Data = users
-            };
+            return  OperationResult<List<UserDto>>.Success(users);
+           
         }
     }
 }

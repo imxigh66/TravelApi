@@ -1,5 +1,6 @@
 ﻿using Application.Auth.Login.Commands;
 using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Auth;
 
 using MediatR;
@@ -43,14 +44,12 @@ namespace Application.Auth.Login.CommandHandler
                 };
             }
 
-            return new OperationResult<LoginResponse>
+            return  OperationResult<LoginResponse>.Success(new LoginResponse
             {
-                IsSuccess = true,
-                Data = new LoginResponse
-                {
-                    UserId = user.UserId
-                }
-            };
+               
+                 UserId = user.UserId
+                
+            });
 
         }
     }

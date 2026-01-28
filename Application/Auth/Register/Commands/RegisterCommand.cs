@@ -1,4 +1,5 @@
-﻿using Application.DTO.Auth;
+﻿using Application.Common.Models;
+using Application.DTO.Auth;
 using Domain.Entities;
 using MediatR;
 using System;

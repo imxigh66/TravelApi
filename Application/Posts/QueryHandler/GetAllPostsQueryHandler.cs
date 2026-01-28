@@ -1,4 +1,5 @@
 ﻿using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Posts;
 using Application.Posts.Queries;
 using MediatR;
@@ -31,11 +32,8 @@ namespace Application.Posts.QueryHandler
                 LikesCount = post.LikesCount,
                 CreatedAt = post.CreatedAt
             }).ToList();
-            return new OperationResult<List<PostDto>>
-            {
-                IsSuccess = true,
-                Data = posts
-            };
+            return  OperationResult<List<PostDto>>.Success(posts);
+           
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Places;
 using Application.DTO.Posts;
 using Application.Posts.Commands;
@@ -34,21 +35,18 @@ namespace Application.Posts.CommandHandler
             };
             _context.Posts.Add(post);
             await _context.SaveChangesAsync(cancellationToken);
-            return new OperationResult<PostDto>
+            return OperationResult<PostDto>.Success(new PostDto
             {
-                IsSuccess = true,
-                Data = new PostDto
-                {
-                    PostId = post.PostId,
-                    UserId = post.UserId,
-                    PlaceId = post.PlaceId,
-                    Title = post.Title,
-                    Content = post.Content,
-                    ImageUrl = post.ImageUrl,
-                    LikesCount = post.LikesCount,
-                    CreatedAt = post.CreatedAt
-                }
-            };
+                PostId = post.PostId,
+                UserId = post.UserId,
+                PlaceId = post.PlaceId,
+                Title = post.Title,
+                Content = post.Content,
+                ImageUrl = post.ImageUrl,
+                LikesCount = post.LikesCount,
+                CreatedAt = post.CreatedAt
+            });
+
         }
     }
 }

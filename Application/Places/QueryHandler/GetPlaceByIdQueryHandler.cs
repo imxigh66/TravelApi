@@ -1,4 +1,5 @@
 ﻿using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Places;
 using Application.Places.Queries;
 using MediatR;
@@ -43,11 +44,8 @@ namespace Application.Places.QueryHandler
                     Error = "Place not found."
                 };
             }
-            return new OperationResult<PlaceDto>
-            {
-                IsSuccess = true,
-                Data = place
-            };
+            return  OperationResult<PlaceDto>.Success(place);
+
         }
     }
 }
