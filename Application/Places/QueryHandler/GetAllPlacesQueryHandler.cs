@@ -1,6 +1,6 @@
-﻿using Application.DTO.Places;
+﻿using Application.Common.Interfaces;
+using Application.DTO.Places;
 using Application.Places.Queries;
-using Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,8 +13,8 @@ namespace Application.Places.QueryHandler
 {
     public class GetAllPlacesQueryHandler : IRequestHandler<GetAllPlacesQuery, OperationResult<List<PlaceDto>>>
     {
-        private readonly TravelDbContext _context;
-        public GetAllPlacesQueryHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        public GetAllPlacesQueryHandler(IApplicationDbContext context)
         {
             _context = context;
         }

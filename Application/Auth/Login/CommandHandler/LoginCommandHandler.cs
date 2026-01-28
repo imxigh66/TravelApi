@@ -1,6 +1,7 @@
 ﻿using Application.Auth.Login.Commands;
+using Application.Common.Interfaces;
 using Application.DTO.Auth;
-using Infrastructure;
+
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,8 +14,8 @@ namespace Application.Auth.Login.CommandHandler
 {
     public class LoginCommandHandler : IRequestHandler<LoginCommand, OperationResult<LoginResponse>>
     {
-        private readonly TravelDbContext _context;
-        public LoginCommandHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        public LoginCommandHandler(IApplicationDbContext context)
         {
             _context = context;
         }

@@ -1,6 +1,6 @@
-﻿using Application.DTO.Posts;
+﻿using Application.Common.Interfaces;
+using Application.DTO.Posts;
 using Application.Posts.Queries;
-using Infrastructure;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -12,8 +12,8 @@ namespace Application.Posts.QueryHandler
 {
     public class GetAllPostsQueryHandler : IRequestHandler<GetAllPostsQuery, OperationResult<List<PostDto>>>
     {
-        private readonly TravelDbContext _context;
-        public GetAllPostsQueryHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        public GetAllPostsQueryHandler(IApplicationDbContext context)
         {
             _context = context;
         }

@@ -1,7 +1,7 @@
-﻿using Application.DTO.Places;
+﻿using Application.Common.Interfaces;
+using Application.DTO.Places;
 using Application.DTO.Posts;
 using Application.Posts.Commands;
-using Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,8 +14,8 @@ namespace Application.Posts.CommandHandler
 {
     public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, OperationResult<PostDto>>
     {
-        private readonly TravelDbContext _context;
-        public CreatePostCommandHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        public CreatePostCommandHandler(IApplicationDbContext context)
         {
             _context = context;
         }

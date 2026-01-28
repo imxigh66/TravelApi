@@ -1,8 +1,8 @@
-﻿using Application.DTO.Auth;
+﻿using Application.Common.Interfaces;
+using Application.DTO.Auth;
 using Application.DTO.Places;
 using Application.Places.Commands;
 using Domain.Entities;
-using Infrastructure;
 using MediatR;
 using MediatR.Pipeline;
 using Microsoft.EntityFrameworkCore;
@@ -16,8 +16,8 @@ namespace Application.Places.CommandHandler
 {
     public class CreatePlaceCommandHandler : IRequestHandler<CreatePlaceCommand, OperationResult<PlaceDto>>
     {
-        private readonly TravelDbContext _context;
-        public CreatePlaceCommandHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        public CreatePlaceCommandHandler(IApplicationDbContext context)
         {
             _context = context;
         }

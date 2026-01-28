@@ -1,6 +1,6 @@
 ﻿using Application.Auth.Register.Commands;
+using Application.Common.Interfaces;
 using Application.DTO.Auth;
-using Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Crypto.Generators;
@@ -14,8 +14,8 @@ namespace Application.Auth.Register.CommandHandler
 {
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, OperationResult<RegisterResponse>>
     {
-        private readonly TravelDbContext _ctx;
-        public RegisterCommandHandler(TravelDbContext ctx)
+        private readonly IApplicationDbContext _ctx;
+        public RegisterCommandHandler(IApplicationDbContext ctx)
         {
             _ctx = ctx;
         }
