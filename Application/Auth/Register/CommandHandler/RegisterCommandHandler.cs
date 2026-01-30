@@ -1,6 +1,9 @@
 ﻿using Application.Auth.Register.Commands;
+using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Auth;
-using Infrastructure;
+using AutoMapper;
+using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Crypto.Generators;
@@ -14,10 +17,12 @@ namespace Application.Auth.Register.CommandHandler
 {
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, OperationResult<RegisterResponse>>
     {
-        private readonly TravelDbContext _ctx;
-        public RegisterCommandHandler(TravelDbContext ctx)
+        private readonly IApplicationDbContext _ctx;
+        private readonly IMapper _mapper;
+        public RegisterCommandHandler(IApplicationDbContext ctx, IMapper mapper)
         {
             _ctx = ctx;
+            _mapper = mapper;
         }
         public async Task<OperationResult<RegisterResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
@@ -26,38 +31,26 @@ namespace Application.Auth.Register.CommandHandler
 
             if(exists)
             {
-                return new OperationResult<RegisterResponse>
-                {
-                    IsSuccess = false,
-                    Error = "User with given username or email already exists."
-                };
+                return OperationResult<RegisterResponse>.Failure("User with given username or email already exists.");
+               
             }
 
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password); 
-            var user = new Domain.Entities.User
-            {
-                Username = request.Username,
-                Email = request.Email,
-                PasswordHash = passwordHash,
-                Name = request.Name,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var user = _mapper.Map<User>(request);
+            user.CreatedAt = DateTime.UtcNow;
 
             _ctx.Users.Add(user);
             await _ctx.SaveChangesAsync(cancellationToken);
 
-            return new OperationResult<RegisterResponse>
+            return  OperationResult<RegisterResponse>.Success(new RegisterResponse
             {
-                IsSuccess = true,
-                Data = new RegisterResponse
-                {
+               
                     UserId = user.UserId,
                     Username = user.Username,
                     Email = user.Email,
                     Name = user.Name
-                }
-            };
+                
+            });
         }
     }
 }

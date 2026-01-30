@@ -1,6 +1,8 @@
 ﻿using Application.Auth.Login.Commands;
+using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Auth;
-using Infrastructure;
+
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,8 +15,8 @@ namespace Application.Auth.Login.CommandHandler
 {
     public class LoginCommandHandler : IRequestHandler<LoginCommand, OperationResult<LoginResponse>>
     {
-        private readonly TravelDbContext _context;
-        public LoginCommandHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        public LoginCommandHandler(IApplicationDbContext context)
         {
             _context = context;
         }
@@ -25,31 +27,23 @@ namespace Application.Auth.Login.CommandHandler
 
             if (user == null)
             {
-                return new OperationResult<LoginResponse>
-                {
-                    IsSuccess = false,
-                    Error = "Invalid email or password."
-                };
+                return OperationResult<LoginResponse>.Failure("Invalid email or password.");
+                
             }
 
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!isPasswordValid)
             {
-                return new OperationResult<LoginResponse>
-                {
-                    IsSuccess = false,
-                    Error = "Invalid email or password."
-                };
+                return  OperationResult<LoginResponse>.Failure("Invalid email or password.");
+               
             }
 
-            return new OperationResult<LoginResponse>
+            return  OperationResult<LoginResponse>.Success(new LoginResponse
             {
-                IsSuccess = true,
-                Data = new LoginResponse
-                {
-                    UserId = user.UserId
-                }
-            };
+               
+                 UserId = user.UserId
+                
+            });
 
         }
     }

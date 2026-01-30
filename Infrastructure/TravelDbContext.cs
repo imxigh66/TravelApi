@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.Common.Interfaces;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure
 {
-    public class TravelDbContext : DbContext
+    public class TravelDbContext : DbContext, IApplicationDbContext
     {
         public TravelDbContext(DbContextOptions<TravelDbContext> options) : base(options) { }
 
