@@ -1,10 +1,13 @@
 ﻿using Application.Common.Models;
 using Application.DTO.Posts;
 using Application.DTO.Users;
+using Application.Posts.Commands;
 using Application.Posts.Queries;
 using Application.Users.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace TravelApi.Controllers
 {
@@ -18,16 +21,55 @@ namespace TravelApi.Controllers
             _mediator = mediator;
         }
 
-        [Authorize]
+        [Authorize] 
         [HttpPost]
-        public async Task<IActionResult> CreatePost([FromBody] Application.Posts.Commands.CreatePostCommand command)
+        [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<PostDto>>> CreatePost(CreatePostCommand command)
         {
-            var result = await _mediator.Send(command);
-            if (!result.IsSuccess)
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
+                  ?? User.FindFirst(JwtRegisteredClaimNames.Sub)
+                  ?? User.FindFirst("sub");
+
+            if (userIdClaim == null)
             {
-                return BadRequest(new { error = result.Error });
+                // ДОБАВЬ ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
+                var allClaims = string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"));
+                Console.WriteLine($"All claims: {allClaims}"); // Посмотри что в токене
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
             }
-            return Ok(result.Data);
+
+            if (!int.TryParse(userIdClaim.Value, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid user ID in token"));
+
+
+            command.UserId = userId;
+
+
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return CreatedAtAction(
+                nameof(GetPostById),
+                new { id = result.Data!.PostId },
+                ApiResponse<PostDto>.SuccessResponse(
+                    result.Data,
+                    "Post created successfully"
+                )
+            );
+        }
+
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetPostById(int id)
+        {
+            var result = await _mediator.Send(new GetPostByIdQuery { PostId = id });
+            if (!result.IsSuccess) return NotFound(ErrorResponse.NotFound(result.Error!));
+            return Ok(ApiResponse<PostDto>.SuccessResponse(result.Data!));
         }
 
 
