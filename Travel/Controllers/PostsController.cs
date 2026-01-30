@@ -3,6 +3,7 @@ using Application.DTO.Posts;
 using Application.DTO.Users;
 using Application.Posts.Queries;
 using Application.Users.Queries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TravelApi.Controllers
@@ -17,6 +18,7 @@ namespace TravelApi.Controllers
             _mediator = mediator;
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreatePost([FromBody] Application.Posts.Commands.CreatePostCommand command)
         {
@@ -28,6 +30,8 @@ namespace TravelApi.Controllers
             return Ok(result.Data);
         }
 
+
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<PaginatedList<PostDto>>> GetAllPosts(
     [FromQuery] int pageNumber = 1,
