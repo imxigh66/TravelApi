@@ -27,7 +27,7 @@ namespace Application.Places.CommandHandler
             var exists = await _context.Places.AnyAsync(p => p.Name == request.Name, cancellationToken);
             if (exists)
             {
-                return new OperationResult<PlaceDto> { IsSuccess = false, Error = "This place already exists" };
+                return OperationResult<PlaceDto>.Failure("This place already exists");
             }
 
 

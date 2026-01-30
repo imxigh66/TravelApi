@@ -25,11 +25,8 @@ namespace Application.Users.QueryHandler
 
             if (user == null)
             {
-                return new OperationResult<UserDto>
-                {
-                    IsSuccess = false,
-                    Error = "User not found."
-                };
+                return  OperationResult<UserDto>.Failure("User not found.");
+               
             }
 
             var userDto = new UserDto

@@ -27,11 +27,8 @@ namespace Application.Auth.Register.CommandHandler
 
             if(exists)
             {
-                return new OperationResult<RegisterResponse>
-                {
-                    IsSuccess = false,
-                    Error = "User with given username or email already exists."
-                };
+                return OperationResult<RegisterResponse>.Failure("User with given username or email already exists.");
+               
             }
 
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password); 

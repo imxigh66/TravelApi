@@ -38,11 +38,8 @@ namespace Application.Places.QueryHandler
                     .FirstOrDefaultAsync(cancellationToken);
             if (place == null)
             {
-                return new OperationResult<PlaceDto>
-                {
-                    IsSuccess = false,
-                    Error = "Place not found."
-                };
+                return  OperationResult<PlaceDto>.Failure("Place not found.");
+              
             }
             return  OperationResult<PlaceDto>.Success(place);
 

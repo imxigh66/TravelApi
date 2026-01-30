@@ -27,21 +27,15 @@ namespace Application.Auth.Login.CommandHandler
 
             if (user == null)
             {
-                return new OperationResult<LoginResponse>
-                {
-                    IsSuccess = false,
-                    Error = "Invalid email or password."
-                };
+                return OperationResult<LoginResponse>.Failure("Invalid email or password.");
+                
             }
 
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!isPasswordValid)
             {
-                return new OperationResult<LoginResponse>
-                {
-                    IsSuccess = false,
-                    Error = "Invalid email or password."
-                };
+                return  OperationResult<LoginResponse>.Failure("Invalid email or password.");
+               
             }
 
             return  OperationResult<LoginResponse>.Success(new LoginResponse
