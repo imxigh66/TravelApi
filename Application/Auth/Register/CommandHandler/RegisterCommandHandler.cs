@@ -15,41 +15,50 @@ using System.Threading.Tasks;
 
 namespace Application.Auth.Register.CommandHandler
 {
-    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, OperationResult<RegisterResponse>>
+    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, OperationResult<RegisterDto>>
     {
         private readonly IApplicationDbContext _ctx;
         private readonly IMapper _mapper;
-        public RegisterCommandHandler(IApplicationDbContext ctx, IMapper mapper)
+        private readonly IPasswordHasher _passwordHasher;
+        public RegisterCommandHandler(IApplicationDbContext ctx, IMapper mapper, IPasswordHasher passwordHasher)
         {
             _ctx = ctx;
             _mapper = mapper;
+            _passwordHasher = passwordHasher;
         }
-        public async Task<OperationResult<RegisterResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
+        public async Task<OperationResult<RegisterDto>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
-            var exists = await _ctx.Users
+            var emailExists = await _ctx.Users
+                .AnyAsync(u => u.Email == request.Email, cancellationToken);
+            if (emailExists)
+            {
+                return OperationResult<RegisterDto>.Failure("Email is already in use.");
+            }
+
+            var usernameExists = await _ctx.Users
                 .AnyAsync(u => u.Username == request.Username || u.Email == request.Email, cancellationToken);
 
-            if(exists)
+            if(usernameExists)
             {
-                return OperationResult<RegisterResponse>.Failure("User with given username or email already exists.");
+                return OperationResult<RegisterDto>.Failure("Username already exists");
                
             }
 
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password); 
             var user = _mapper.Map<User>(request);
             user.CreatedAt = DateTime.UtcNow;
+            user.PasswordHash = _passwordHasher.HashPassword(request.Password);
 
             _ctx.Users.Add(user);
             await _ctx.SaveChangesAsync(cancellationToken);
 
-            return  OperationResult<RegisterResponse>.Success(new RegisterResponse
+            return  OperationResult<RegisterDto>.Success(new RegisterDto
             {
                
-                    UserId = user.UserId,
                     Username = user.Username,
                     Email = user.Email,
-                    Name = user.Name
-                
+                    Name = user.Name,
+                    Password=string.Empty
+
             });
         }
     }

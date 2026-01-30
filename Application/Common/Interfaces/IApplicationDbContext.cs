@@ -16,6 +16,7 @@ namespace Application.Common.Interfaces
         DbSet<TripPlace> TripPlaces { get; }
         DbSet<Post> Posts { get; }
         DbSet<Comment> Comments { get; }
+        DbSet<RefreshToken> RefreshTokens { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
