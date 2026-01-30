@@ -39,8 +39,7 @@ namespace Application.Users.QueryHandler
                 Email = user.Email,
                 Name = user.Name,
                 Bio = user.Bio,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
+                CreatedAt = user.CreatedAt
             };
             return  OperationResult<UserDto>.Success(userDto);
         }

@@ -9,7 +9,9 @@ using System.Threading.Tasks;
 
 namespace Application.Users.Queries
 {
-    public class GetAllUsersQuery:IRequest<OperationResult<List<UserDto>>>
+    public class GetAllUsersQuery:IRequest<PaginatedList<UserDto>>
     {
+        public int PageSize { get; set; }
+        public int PageNumber { get; set; }
     }
 }

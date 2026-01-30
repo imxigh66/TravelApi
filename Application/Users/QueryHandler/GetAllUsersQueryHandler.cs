@@ -2,6 +2,9 @@
 using Application.Common.Models;
 using Application.DTO.Users;
 using Application.Users.Queries;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,28 +15,30 @@ using System.Threading.Tasks;
 
 namespace Application.Users.QueryHandler
 {
-    public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, OperationResult<List<UserDto>>>
+    public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, PaginatedList<UserDto>>
     {
         private readonly IApplicationDbContext _context;
-        public GetAllUsersQueryHandler(IApplicationDbContext context)
+        private readonly IMapper _mapper; 
+        public GetAllUsersQueryHandler(IApplicationDbContext context,IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
-        public async Task<OperationResult<List<UserDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
+        public async Task<PaginatedList<UserDto>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            var users = await _context.Users.AsNoTracking().Select(user => new UserDto
-            {
-                UserId = user.UserId,
-                Username = user.Username,
-                Email = user.Email,
-                Name = user.Name,
-                Bio = user.Bio,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
-            }).ToListAsync(cancellationToken);
+            var usersQuery = _context.Users
+            .AsNoTracking()
+            .OrderByDescending(u => u.CreatedAt)
+            .ProjectTo<UserDto>(_mapper.ConfigurationProvider);
 
-            return  OperationResult<List<UserDto>>.Success(users);
-           
+            
+            return await PaginatedList<UserDto>.CreateAsync(
+                usersQuery,
+                request.PageNumber,
+                request.PageSize,
+                cancellationToken
+            );
+
         }
     }
 }

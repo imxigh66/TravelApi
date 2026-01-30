@@ -1,4 +1,6 @@
-﻿using Application.Users.Queries;
+﻿using Application.Common.Models;
+using Application.DTO.Users;
+using Application.Users.Queries;
 using Application.Users.QueriesCommand;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -29,15 +31,13 @@ namespace TravelApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<ActionResult<PaginatedList<UserDto>>> GetAllUsers(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
         {
-            var query = new GetAllUsersQuery();
+            var query = new GetAllUsersQuery { PageNumber = pageNumber, PageSize = pageSize };
             var result = await _mediator.Send(query);
-            if (!result.IsSuccess)
-            {
-                return BadRequest(new { error = result.Error });
-            }
-            return Ok(result.Data);
+            return Ok(result);
         }
     }
 }

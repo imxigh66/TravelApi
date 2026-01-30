@@ -9,7 +9,9 @@ using System.Threading.Tasks;
 
 namespace Application.Places.Queries
 {
-    public class GetAllPlacesQuery:IRequest<OperationResult<List<PlaceDto>>>
+    public class GetAllPlacesQuery:IRequest<PaginatedList<PlaceDto>>
     {
+        public int PageSize { get; set; }
+        public int PageNumber { get; set; }
     }
 }

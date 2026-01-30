@@ -9,7 +9,9 @@ using System.Threading.Tasks;
 
 namespace Application.Posts.Queries
 {
-    public class GetAllPostsQuery:IRequest<OperationResult<List<PostDto>>>
+    public class GetAllPostsQuery:IRequest<PaginatedList<PostDto>>
     {
+        public int PageSize { get; set; }
+        public int PageNumber { get; set; }
     }
 }
