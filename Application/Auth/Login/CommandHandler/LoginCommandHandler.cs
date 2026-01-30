@@ -1,6 +1,9 @@
 ﻿using Application.Auth.Login.Commands;
+using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.DTO.Auth;
-using Infrastructure;
+using AutoMapper;
+using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,10 +16,15 @@ namespace Application.Auth.Login.CommandHandler
 {
     public class LoginCommandHandler : IRequestHandler<LoginCommand, OperationResult<LoginResponse>>
     {
-        private readonly TravelDbContext _context;
-        public LoginCommandHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        private readonly IPasswordHasher _passwordHasher;
+        private readonly IJwtTokenService _jwtTokenService;
+    
+        public LoginCommandHandler(IApplicationDbContext context,IPasswordHasher passwordHasher,IJwtTokenService jwtTokenService)
         {
             _context = context;
+            _passwordHasher = passwordHasher;
+            _jwtTokenService = jwtTokenService;
         }
         public async Task<OperationResult<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
@@ -25,31 +33,45 @@ namespace Application.Auth.Login.CommandHandler
 
             if (user == null)
             {
-                return new OperationResult<LoginResponse>
-                {
-                    IsSuccess = false,
-                    Error = "Invalid email or password."
-                };
+                return OperationResult<LoginResponse>.Failure("Invalid email or password.");
+                
             }
 
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-            if (!isPasswordValid)
-            {
-                return new OperationResult<LoginResponse>
-                {
-                    IsSuccess = false,
-                    Error = "Invalid email or password."
-                };
-            }
+            if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+                return OperationResult<LoginResponse>.Failure("Invalid credentials");
 
-            return new OperationResult<LoginResponse>
+            var accessToken = _jwtTokenService.GenerateAccessToken(
+            user.UserId,
+            user.Email,
+            user.Username);
+
+            var refreshTokenValue = _jwtTokenService.GenerateRefreshToken();
+
+            var refreshToken = new Domain.Entities.RefreshToken
             {
-                IsSuccess = true,
-                Data = new LoginResponse
-                {
-                    UserId = user.UserId
-                }
+                UserId=user.UserId,
+                Token = refreshTokenValue,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                CreatedAt = DateTime.UtcNow,
+                IsRevoked = false
             };
+
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync(cancellationToken);
+
+
+            var response = new LoginResponse
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                Name = user.Name,
+                AccessToken = accessToken,
+                RefreshToken = refreshTokenValue,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30) // Срок access token
+            };
+
+            return OperationResult<LoginResponse>.Success(response);
 
         }
     }

@@ -1,5 +1,10 @@
 ﻿using Application.Auth.Register.Commands;
+using Application.Common.Models;
+using Application.DTO.Places;
+using Application.DTO.Posts;
 using Application.Places.Commands;
+using Application.Places.Queries;
+using Application.Posts.Queries;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TravelApi.Controllers
@@ -27,15 +32,13 @@ namespace TravelApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllPlaces()
+        public async Task<ActionResult<PaginatedList<PlaceDto>>> GetAllPlaces(
+     [FromQuery] int pageNumber = 1,
+     [FromQuery] int pageSize = 10)
         {
-            var query = new Application.Places.Queries.GetAllPlacesQuery();
+            var query = new GetAllPlacesQuery { PageNumber = pageNumber, PageSize = pageSize };
             var result = await _mediator.Send(query);
-            if (!result.IsSuccess)
-            {
-                return BadRequest(new { error = result.Error });
-            }
-            return Ok(result.Data);
+            return Ok(result);
         }
 
         [HttpGet("{placeId}")]

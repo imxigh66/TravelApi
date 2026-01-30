@@ -1,4 +1,5 @@
-﻿using Application.DTO.Places;
+﻿using Application.Common.Models;
+using Application.DTO.Places;
 using MediatR;
 using System;
 using System.Collections.Generic;

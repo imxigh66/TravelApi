@@ -1,4 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Application.Common.Models;
+using Application.DTO.Posts;
+using Application.DTO.Users;
+using Application.Posts.Queries;
+using Application.Users.Queries;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace TravelApi.Controllers
 {
@@ -12,6 +18,7 @@ namespace TravelApi.Controllers
             _mediator = mediator;
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreatePost([FromBody] Application.Posts.Commands.CreatePostCommand command)
         {
@@ -23,16 +30,16 @@ namespace TravelApi.Controllers
             return Ok(result.Data);
         }
 
+
+        [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> GetAllPosts()
+        public async Task<ActionResult<PaginatedList<PostDto>>> GetAllPosts(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
         {
-            var query = new Application.Posts.Queries.GetAllPostsQuery();
+            var query = new GetAllPostsQuery { PageNumber = pageNumber, PageSize = pageSize };
             var result = await _mediator.Send(query);
-            if (!result.IsSuccess)
-            {
-                return BadRequest(new { error = result.Error });
-            }
-            return Ok(result.Data);
+            return Ok(result);
         }
     }
 }

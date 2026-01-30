@@ -22,5 +22,6 @@ namespace Domain.Entities
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<Trip> Trips { get; set; } = new List<Trip>();           // как владелец
         public ICollection<Place> PlacesCreated { get; set; } = new List<Place>();  // created_by
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

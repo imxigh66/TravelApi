@@ -1,7 +1,10 @@
-﻿using Application.DTO.Places;
+﻿using Application.Common.Interfaces;
+using Application.Common.Models;
+using Application.DTO.Places;
 using Application.DTO.Posts;
 using Application.Posts.Commands;
-using Infrastructure;
+using AutoMapper;
+using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,41 +17,33 @@ namespace Application.Posts.CommandHandler
 {
     public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, OperationResult<PostDto>>
     {
-        private readonly TravelDbContext _context;
-        public CreatePostCommandHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        private readonly IMapper _mapper;
+        public CreatePostCommandHandler(IApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
         public async Task<OperationResult<PostDto>> Handle(CreatePostCommand request, CancellationToken cancellationToken)
         {
-            
-            var post = new Domain.Entities.Post
-            {
-                UserId = request.UserId,
-                PlaceId = request.PlaceId,
-                Title = request.Title,
-                Content = request.Content,
-                ImageUrl = request.ImageUrl,
-                LikesCount = request.LikesCount,
-                CreatedAt = DateTime.UtcNow
-            };
+
+            var post = _mapper.Map<Post>(request);
+            post.CreatedAt = DateTime.UtcNow;
+
             _context.Posts.Add(post);
             await _context.SaveChangesAsync(cancellationToken);
-            return new OperationResult<PostDto>
+            return OperationResult<PostDto>.Success(new PostDto
             {
-                IsSuccess = true,
-                Data = new PostDto
-                {
-                    PostId = post.PostId,
-                    UserId = post.UserId,
-                    PlaceId = post.PlaceId,
-                    Title = post.Title,
-                    Content = post.Content,
-                    ImageUrl = post.ImageUrl,
-                    LikesCount = post.LikesCount,
-                    CreatedAt = post.CreatedAt
-                }
-            };
+                PostId = post.PostId,
+                UserId = post.UserId,
+                PlaceId = post.PlaceId,
+                Title = post.Title,
+                Content = post.Content,
+                ImageUrl = post.ImageUrl,
+                LikesCount = post.LikesCount,
+                CreatedAt = post.CreatedAt
+            });
+
         }
     }
 }

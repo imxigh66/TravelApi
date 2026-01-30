@@ -1,5 +1,8 @@
 ﻿using Application.Auth.Login.Commands;
+using Application.Auth.RefreshToken.Commands;
 using Application.Auth.Register.Commands;
+using Application.Common.Models;
+using Application.DTO.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,25 +19,54 @@ namespace TravelApi.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register( RegisterCommand command)
+        [ProducesResponseType(typeof(ApiResponse<RegisterDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<RegisterDto>>> Register(RegisterCommand command)
         {
             var result = await _mediator.Send(command);
+
             if (!result.IsSuccess)
-            {
-                return BadRequest(new { error = result.Error });
-            }
-            return Ok(result.Data);
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return CreatedAtAction(
+                nameof(Register),
+                ApiResponse<RegisterDto>.SuccessResponse(
+                    result.Data!,
+                    "User registered successfully"
+                )
+            );
+        }
+        [HttpPost("login")]
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(LoginCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return Unauthorized(ErrorResponse.Unauthorized(result.Error!));
+
+            return Ok(ApiResponse<LoginResponse>.SuccessResponse(
+                result.Data!,
+                "Login successful"
+            ));
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginCommand command)
+        [HttpPost("refresh-token")]
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<LoginResponse>>> RefreshToken(
+          [FromBody] RefreshTokenCommand command)
         {
             var result = await _mediator.Send(command);
+
             if (!result.IsSuccess)
-            {
-                return Unauthorized(new { error = result.Error });
-            }
-            return Ok(result.Data);
+                return Unauthorized(ErrorResponse.Unauthorized(result.Error!));
+
+            return Ok(ApiResponse<LoginResponse>.SuccessResponse(
+                result.Data!,
+                "Token refreshed successfully"
+            ));
         }
     }
 }

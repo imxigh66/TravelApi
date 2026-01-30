@@ -1,4 +1,5 @@
-﻿using Application.DTO.Posts;
+﻿using Application.Common.Models;
+using Application.DTO.Posts;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,9 @@ using System.Threading.Tasks;
 
 namespace Application.Posts.Queries
 {
-    public class GetAllPostsQuery:IRequest<OperationResult<List<PostDto>>>
+    public class GetAllPostsQuery:IRequest<PaginatedList<PostDto>>
     {
+        public int PageSize { get; set; }
+        public int PageNumber { get; set; }
     }
 }
