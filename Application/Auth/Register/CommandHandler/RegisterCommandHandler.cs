@@ -2,6 +2,8 @@
 using Application.Common.Interfaces;
 using Application.Common.Models;
 using Application.DTO.Auth;
+using AutoMapper;
+using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Crypto.Generators;
@@ -16,9 +18,11 @@ namespace Application.Auth.Register.CommandHandler
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, OperationResult<RegisterResponse>>
     {
         private readonly IApplicationDbContext _ctx;
-        public RegisterCommandHandler(IApplicationDbContext ctx)
+        private readonly IMapper _mapper;
+        public RegisterCommandHandler(IApplicationDbContext ctx, IMapper mapper)
         {
             _ctx = ctx;
+            _mapper = mapper;
         }
         public async Task<OperationResult<RegisterResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
@@ -32,15 +36,8 @@ namespace Application.Auth.Register.CommandHandler
             }
 
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password); 
-            var user = new Domain.Entities.User
-            {
-                Username = request.Username,
-                Email = request.Email,
-                PasswordHash = passwordHash,
-                Name = request.Name,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var user = _mapper.Map<User>(request);
+            user.CreatedAt = DateTime.UtcNow;
 
             _ctx.Users.Add(user);
             await _ctx.SaveChangesAsync(cancellationToken);

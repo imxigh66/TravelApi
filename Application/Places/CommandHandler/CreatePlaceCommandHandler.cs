@@ -3,6 +3,7 @@ using Application.Common.Models;
 using Application.DTO.Auth;
 using Application.DTO.Places;
 using Application.Places.Commands;
+using AutoMapper;
 using Domain.Entities;
 using MediatR;
 using MediatR.Pipeline;
@@ -18,9 +19,11 @@ namespace Application.Places.CommandHandler
     public class CreatePlaceCommandHandler : IRequestHandler<CreatePlaceCommand, OperationResult<PlaceDto>>
     {
         private readonly IApplicationDbContext _context;
-        public CreatePlaceCommandHandler(IApplicationDbContext context)
+        private readonly IMapper _mapper;
+        public CreatePlaceCommandHandler(IApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
         public async Task<OperationResult<PlaceDto>> Handle(CreatePlaceCommand request, CancellationToken cancellationToken)
         {
@@ -31,16 +34,9 @@ namespace Application.Places.CommandHandler
             }
 
 
-            var place = new Place
-            {
-                Name = request.Name,
-                Description = request.Description,
-                CountryCode = request.CountryCode,
-                City = request.City,
-                Address = request.Address,
-                PlaceType = request.PlaceType,
-                CreatedAt = DateTime.UtcNow
-            };
+            var place = _mapper.Map<Place>(request);
+            place.CreatedAt = DateTime.UtcNow;
+
 
             _context.Places.Add(place);
             await _context.SaveChangesAsync(cancellationToken);
