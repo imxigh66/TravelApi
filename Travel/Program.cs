@@ -5,6 +5,7 @@ using Application.Common.Interfaces;
 using Application.Common.Mappings;
 using FluentValidation;
 using Infrastructure;
+using Infrastructure.ExternalServices.Email;
 using Infrastructure.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,6 +28,10 @@ builder.Services.AddScoped<IApplicationDbContext>(sp =>
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+builder.Services.Configure<MailtrapOptions>(
+    builder.Configuration.GetSection("Mailtrap"));
+builder.Services.AddScoped<IEmailService, MailtrapService>();
 
 builder.Services.AddMediatR(configuration =>
 {

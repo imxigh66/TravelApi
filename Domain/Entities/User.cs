@@ -15,6 +15,11 @@ namespace Domain.Entities
         public string Name { get; set; } = null!;
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
+
+        public bool EmailConfirmed { get; set; } = false;
+        public string? EmailConfirmationToken { get; set; }
+        public DateTime? EmailConfirmationTokenExpires { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
