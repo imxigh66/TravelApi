@@ -15,6 +15,11 @@ namespace Domain.Entities
         public string Name { get; set; } = null!;
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
+
+        public bool EmailConfirmed { get; set; } = false;
+        public string? EmailConfirmationToken { get; set; }
+        public DateTime? EmailConfirmationTokenExpires { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
@@ -22,5 +27,6 @@ namespace Domain.Entities
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<Trip> Trips { get; set; } = new List<Trip>();           // как владелец
         public ICollection<Place> PlacesCreated { get; set; } = new List<Place>();  // created_by
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }
