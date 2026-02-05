@@ -4,6 +4,7 @@ using Application.Auth.Register.Commands;
 using Application.Common.Models;
 using Application.DTO.Auth;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TravelApi.Controllers
@@ -91,6 +92,14 @@ namespace TravelApi.Controllers
                 result.Data!,
                 "Token refreshed successfully"
             ));
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutCommand command)
+        {
+            await _mediator.Send(command);
+            return NoContent();
         }
     }
 }
