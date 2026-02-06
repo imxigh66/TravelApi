@@ -8,12 +8,13 @@ using Microsoft.AspNetCore.Mvc;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using Application.Users.Command;
 
 namespace TravelApi.Controllers
 {
     [ApiController]
     [Route("api/users")]
-    public class UsersController:ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly IMediator _mediator;
         private readonly ILogger<UsersController> _logger;
@@ -27,9 +28,9 @@ namespace TravelApi.Controllers
 
         [Authorize]
         [HttpGet("me")]
-        [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<ApiResponse<UserDto>>> GetCurrentUser()
+        public async Task<ActionResult<ApiResponse<UserResponse>>> GetCurrentUser()
         {
             // Получаем userId из JWT токена
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -59,13 +60,13 @@ namespace TravelApi.Controllers
                 return NotFound(ErrorResponse.NotFound(result.Error!));
             }
 
-            return Ok(ApiResponse<UserDto>.SuccessResponse(result.Data!));
+            return Ok(ApiResponse<UserResponse>.SuccessResponse(result.Data!));
         }
 
         [HttpGet("{userId}")]
-        [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<UserDto>>> GetUserById(int userId)
+        public async Task<ActionResult<ApiResponse<UserResponse >>> GetUserById(int userId)
         {
             var query = new GetUserByIdQuery { UserId = userId };
             var result = await _mediator.Send(query);
@@ -75,11 +76,11 @@ namespace TravelApi.Controllers
                 return NotFound(ErrorResponse.NotFound(result.Error!));
             }
 
-            return Ok(ApiResponse<UserDto>.SuccessResponse(result.Data!));
+            return Ok(ApiResponse<UserResponse>.SuccessResponse(result.Data!));
         }
 
         [HttpGet]
-        public async Task<ActionResult<PaginatedList<UserDto>>> GetAllUsers(
+        public async Task<ActionResult<PaginatedList<UserResponse>>> GetAllUsers(
     [FromQuery] int pageNumber = 1,
     [FromQuery] int pageSize = 10)
         {
@@ -87,5 +88,35 @@ namespace TravelApi.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+
+
+        [HttpPut]
+        [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<PersonalProfileDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<PersonalProfileDto>>> UpdatePersonalProfile(UpdatePersonalProfileCommand command)
+        {
+            // Получаем userId из JWT токена
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value
+                           ?? User.FindFirst("userId")?.Value;
+            if (userIdClaim == null)
+            {
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token - no user ID found"));
+            }
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid user ID format"));
+            }
+            command.UserId = userId;
+            var result = await _mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+            }
+            return Ok(ApiResponse<PersonalProfileDto>.SuccessResponse(result.Data!));
+        }
+
     }
 }
