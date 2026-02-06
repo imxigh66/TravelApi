@@ -1,6 +1,7 @@
-﻿using Application.DTO.Users;
+﻿using Application.Common.Interfaces;
+using Application.Common.Models;
+using Application.DTO.Users;
 using Application.Users.QueriesCommand;
-using Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,8 +14,8 @@ namespace Application.Users.QueryHandler
 {
     public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, OperationResult<UserDto>>
     {
-        private readonly TravelDbContext _context;
-        public GetUserByIdQueryHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        public GetUserByIdQueryHandler(IApplicationDbContext context)
         {
             _context = context;
         }
@@ -24,11 +25,8 @@ namespace Application.Users.QueryHandler
 
             if (user == null)
             {
-                return new OperationResult<UserDto>
-                {
-                    IsSuccess = false,
-                    Error = "User not found."
-                };
+                return  OperationResult<UserDto>.Failure("User not found.");
+               
             }
 
             var userDto = new UserDto
@@ -38,14 +36,9 @@ namespace Application.Users.QueryHandler
                 Email = user.Email,
                 Name = user.Name,
                 Bio = user.Bio,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
+                CreatedAt = user.CreatedAt
             };
-            return new OperationResult<UserDto>
-            {
-                IsSuccess = true,
-                Data = userDto
-            };
+            return  OperationResult<UserDto>.Success(userDto);
         }
     }
 }

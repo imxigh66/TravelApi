@@ -1,4 +1,5 @@
-﻿using Application.DTO.Users;
+﻿using Application.Common.Models;
+using Application.DTO.Users;
 using MediatR;
 using System;
 using System.Collections.Generic;

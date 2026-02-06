@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.Common.Interfaces;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure
 {
-    public class TravelDbContext : DbContext
+    public class TravelDbContext : DbContext, IApplicationDbContext
     {
         public TravelDbContext(DbContextOptions<TravelDbContext> options) : base(options) { }
 
@@ -18,6 +19,7 @@ namespace Infrastructure
         public DbSet<TripPlace> TripPlaces => Set<TripPlace>();
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<Comment> Comments => Set<Comment>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
         protected override void OnModelCreating(ModelBuilder b)
         {
@@ -32,7 +34,34 @@ namespace Infrastructure
                 e.Property(x => x.Email).HasMaxLength(255).IsRequired();
                 e.Property(x => x.PasswordHash).HasMaxLength(255).IsRequired();
                 e.Property(x => x.Name).HasMaxLength(100);
+                e.Property(x => x.Country).HasMaxLength(2);
+                e.Property(x => x.City).HasMaxLength(100);
+                e.Property(x => x.Bio).HasColumnType("nvarchar(max)");
                 e.Property(x => x.ProfilePicture).HasMaxLength(500);
+                // enums → string
+                e.Property(x => x.TravelInterest)
+                    .HasConversion<string>(); 
+
+                e.Property(x => x.TravelStyle)
+                    .HasConversion<string>();
+
+                e.Property(x => x.AccountType)
+                    .HasConversion<string>()
+                    .IsRequired();
+
+                // Business
+                e.Property(x => x.BusinessType)
+                    .HasConversion<string>();
+
+                e.Property(x => x.BusinessAddress)
+                    .HasMaxLength(255);
+
+                e.Property(x => x.BusinessWebsite)
+                    .HasMaxLength(255);
+
+                e.Property(x => x.BusinessPhone)
+                    .HasMaxLength(30);
+
                 e.HasIndex(x => x.Username).IsUnique();
                 e.HasIndex(x => x.Email).IsUnique();
             });
@@ -132,9 +161,24 @@ namespace Infrastructure
                  .OnDelete(DeleteBehavior.Cascade);
 
                 e.HasOne(x => x.User)
-                 .WithMany() // если хочешь видеть комментарии в User: добавь навигацию и WithMany(u => u.Comments)
+                 .WithMany() 
                  .HasForeignKey(x => x.UserId)
                  .OnDelete(DeleteBehavior.NoAction);
+            });
+
+
+            b.Entity<RefreshToken>(e =>
+            {
+                e.ToTable("refresh_token");
+                e.HasKey(x => x.RefreshTokenId);
+                e.Property(x => x.Token).HasMaxLength(500).IsRequired();
+                e.HasIndex(x => x.Token).IsUnique();
+                e.HasIndex(x => new { x.UserId, x.ExpiresAt });
+
+                e.HasOne(x => x.User)
+                 .WithMany(u => u.RefreshTokens)
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
 
         }
