@@ -20,6 +20,5 @@ namespace Application.DTO.Users
         public string? BusinessWebsite { get; set; } = null!;
         public string? BusinessPhone { get; set; } = null!;
 
-        public DateTime CreatedAt { get; set; }
     }
 }

@@ -45,7 +45,8 @@ namespace Application.Users.QueryHandler
                 BusinessWebsite = user.BusinessWebsite,
                 BusinessPhone = user.BusinessPhone,
                 Bio = user.Bio,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt
             };
             return  OperationResult<UserResponse>.Success(userDto);
         }

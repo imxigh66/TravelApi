@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Application.Users.Command
 {
-    public class UpdatePersonalProfileCommand:IRequest<OperationResult<PersonalProfileDto>>
+    public class UpdateBusinessProfileCommand:IRequest<OperationResult<BusinessProfileDto>>
     {
         public int UserId { get; set; }
         public string? Email { get; set; }
@@ -20,7 +20,9 @@ namespace Application.Users.Command
         public string? City { get; set; }
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
-        public TravelInterest TravelInterest { get; set; }
-        public TravelStyle TravelStyle { get; set; }
+        public BusinessType? BusinessType { get; set; }
+        public string? BusinessAddress { get; set; } = null!;
+        public string? BusinessWebsite { get; set; } = null!;
+        public string? BusinessPhone { get; set; } = null!;
     }
 }

@@ -9,9 +9,9 @@ namespace Application.DTO.Users
 {
     public class BusinessProfileDto:UserDto
     {
-        public BusinessType BusinessType { get; set; }
-        public string BusinessAddress { get; set; } = null!;
-        public string BusinessWebsite { get; set; } = null!;
-        public string BusinessPhone { get; set; } = null!;
+        public BusinessType? BusinessType { get; set; }
+        public string? BusinessAddress { get; set; } = null!;
+        public string? BusinessWebsite { get; set; } = null!;
+        public string? BusinessPhone { get; set; } = null!;
     }
 }

@@ -34,7 +34,7 @@ namespace Infrastructure
                 e.Property(x => x.Email).HasMaxLength(255).IsRequired();
                 e.Property(x => x.PasswordHash).HasMaxLength(255).IsRequired();
                 e.Property(x => x.Name).HasMaxLength(100);
-                e.Property(x => x.Country).HasMaxLength(2);
+                e.Property(x => x.Country).HasMaxLength(100);
                 e.Property(x => x.City).HasMaxLength(100);
                 e.Property(x => x.Bio).HasColumnType("nvarchar(max)");
                 e.Property(x => x.ProfilePicture).HasMaxLength(500);
