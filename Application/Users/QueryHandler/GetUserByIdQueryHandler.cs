@@ -35,6 +35,7 @@ namespace Application.Users.QueryHandler
                 Username = user.Username,
                 Email = user.Email,
                 Name = user.Name,
+                ProfilePicture = user.ProfilePicture,
                 Country = user.Country,
                 City = user.City,
                 AccountType = user.AccountType,
