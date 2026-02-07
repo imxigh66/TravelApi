@@ -34,7 +34,34 @@ namespace Infrastructure
                 e.Property(x => x.Email).HasMaxLength(255).IsRequired();
                 e.Property(x => x.PasswordHash).HasMaxLength(255).IsRequired();
                 e.Property(x => x.Name).HasMaxLength(100);
+                e.Property(x => x.Country).HasMaxLength(100);
+                e.Property(x => x.City).HasMaxLength(100);
+                e.Property(x => x.Bio).HasColumnType("nvarchar(max)");
                 e.Property(x => x.ProfilePicture).HasMaxLength(500);
+                // enums → string
+                e.Property(x => x.TravelInterest)
+                    .HasConversion<string>(); 
+
+                e.Property(x => x.TravelStyle)
+                    .HasConversion<string>();
+
+                e.Property(x => x.AccountType)
+                    .HasConversion<string>()
+                    .IsRequired();
+
+                // Business
+                e.Property(x => x.BusinessType)
+                    .HasConversion<string>();
+
+                e.Property(x => x.BusinessAddress)
+                    .HasMaxLength(255);
+
+                e.Property(x => x.BusinessWebsite)
+                    .HasMaxLength(255);
+
+                e.Property(x => x.BusinessPhone)
+                    .HasMaxLength(30);
+
                 e.HasIndex(x => x.Username).IsUnique();
                 e.HasIndex(x => x.Email).IsUnique();
             });

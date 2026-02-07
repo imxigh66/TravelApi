@@ -6,6 +6,7 @@ using AutoMapper;
 using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,12 +20,13 @@ namespace Application.Auth.Login.CommandHandler
         private readonly IApplicationDbContext _context;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtTokenService _jwtTokenService;
-    
-        public LoginCommandHandler(IApplicationDbContext context,IPasswordHasher passwordHasher,IJwtTokenService jwtTokenService)
+        private readonly ILogger<LoginCommandHandler> _logger;
+        public LoginCommandHandler(IApplicationDbContext context,IPasswordHasher passwordHasher,IJwtTokenService jwtTokenService, ILogger<LoginCommandHandler> logger)
         {
             _context = context;
             _passwordHasher = passwordHasher;
             _jwtTokenService = jwtTokenService;
+            _logger = logger;
         }
         public async Task<OperationResult<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
@@ -37,8 +39,19 @@ namespace Application.Auth.Login.CommandHandler
                 
             }
 
+            if (!user.EmailConfirmed)
+            {
+                _logger.LogWarning($"⚠️ Login attempt with unconfirmed email: {request.Email}");
+                return OperationResult<LoginResponse>.Failure(
+                    "Email not confirmed. Please check your email or request a new confirmation link.");
+            }
+
             if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
                 return OperationResult<LoginResponse>.Failure("Invalid credentials");
+
+          
+
+            _logger.LogInformation($"✅ User logged in: {user.Email}");
 
             var accessToken = _jwtTokenService.GenerateAccessToken(
             user.UserId,

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Application.Users.QueriesCommand
 {
-    public class GetUserByIdQuery:IRequest<OperationResult<UserDto>>
+    public class GetUserByIdQuery:IRequest<OperationResult<UserResponse>>
     {
         public int UserId { get; set; }
     }

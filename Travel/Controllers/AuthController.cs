@@ -4,6 +4,7 @@ using Application.Auth.Register.Commands;
 using Application.Common.Models;
 using Application.DTO.Auth;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TravelApi.Controllers
@@ -23,6 +24,9 @@ namespace TravelApi.Controllers
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<RegisterDto>>> Register(RegisterCommand command)
         {
+
+            command.BaseUrl = $"{Request.Scheme}://{Request.Host}";
+
             var result = await _mediator.Send(command);
 
             if (!result.IsSuccess)
@@ -32,10 +36,31 @@ namespace TravelApi.Controllers
                 nameof(Register),
                 ApiResponse<RegisterDto>.SuccessResponse(
                     result.Data!,
-                    "User registered successfully"
+                    "User registered successfully. Please check your email to confirm your account."
                 )
             );
         }
+
+
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("Token is required.");
+
+            var command = new ConfirmEmailCommand { Token = token };
+            var success = await _mediator.Send(command);
+
+            if (!success)
+            {
+                // Редирект на фронтенд с ошибкой
+                return Redirect("http://localhost:3000/email-confirmed?success=false");
+            }
+
+            // Редирект на фронтенд с успехом
+            return Redirect("http://localhost:3000/email-confirmed?success=true");
+        }
+
         [HttpPost("login")]
         [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -67,6 +92,14 @@ namespace TravelApi.Controllers
                 result.Data!,
                 "Token refreshed successfully"
             ));
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutCommand command)
+        {
+            await _mediator.Send(command);
+            return NoContent();
         }
     }
 }
