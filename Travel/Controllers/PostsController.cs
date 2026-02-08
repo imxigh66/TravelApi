@@ -26,27 +26,24 @@ namespace TravelApi.Controllers
         [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<ApiResponse<PostDto>>> CreatePost(CreatePostCommand command)
+        public async Task<ActionResult<ApiResponse<PostDto>>> CreatePost(
+    [FromForm] CreatePostWithImageDto dto)
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst("sub")?.Value;
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
-                  ?? User.FindFirst(JwtRegisteredClaimNames.Sub)
-                  ?? User.FindFirst("sub");
-
-            if (userIdClaim == null)
-            {
-                
-                var allClaims = string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"));
-                Console.WriteLine($"All claims: {allClaims}"); 
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
                 return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
-            }
 
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-                return Unauthorized(ErrorResponse.Unauthorized("Invalid user ID in token"));
-
-
-            command.UserId = userId;
-
+            var command = new CreatePostCommand
+            {
+                UserId = userId,
+                Title = dto.Title,
+                Content = dto.Content,
+                PlaceId = dto.PlaceId,
+                Images = dto.Images  // 👈 Массив файлов
+            };
 
             var result = await _mediator.Send(command);
 
@@ -63,7 +60,7 @@ namespace TravelApi.Controllers
             );
         }
 
-     
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetPostById(int id)
         {

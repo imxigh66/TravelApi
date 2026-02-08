@@ -7,6 +7,7 @@ using AutoMapper;
 using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,10 +20,14 @@ namespace Application.Posts.CommandHandler
     {
         private readonly IApplicationDbContext _context;
         private readonly IMapper _mapper;
-        public CreatePostCommandHandler(IApplicationDbContext context, IMapper mapper)
+        private readonly IFileStorageService _fileStorageService;
+        private readonly ILogger<CreatePostCommandHandler> _logger;
+        public CreatePostCommandHandler(IApplicationDbContext context, IMapper mapper, IFileStorageService fileStorageService, ILogger<CreatePostCommandHandler> logger)
         {
             _context = context;
             _mapper = mapper;
+            _fileStorageService = fileStorageService;
+            _logger = logger;
         }
         public async Task<OperationResult<PostDto>> Handle(CreatePostCommand request, CancellationToken cancellationToken)
         {
@@ -42,16 +47,57 @@ namespace Application.Posts.CommandHandler
                     return OperationResult<PostDto>.Failure($"Place with ID {request.PlaceId} not found");
             }
 
-            var post = _mapper.Map<Post>(request);
-            post.CreatedAt = DateTime.UtcNow;
-            post.UpdatedAt = DateTime.UtcNow;
+            var post = new Post
+            {
+                UserId = request.UserId,
+                PlaceId = request.PlaceId,
+                Title = request.Title,
+                Content = request.Content,
+                LikesCount = request.LikesCount,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
 
             _context.Posts.Add(post);
             await _context.SaveChangesAsync(cancellationToken);
 
+            if(request.Images != null && request.Images.Any())
+            {
+                var imageUrls = new List<string>();
+                var sortOrder = 1;
+                foreach (var imageFile in request.Images)
+                {
+                    try
+                    {
+                        var imageUrl = await _fileStorageService.UploadImageAsync(imageFile, "posts");
+
+                        var postImage = new PostImage
+                        {
+                            PostId = post.PostId,
+                            ImageUrl = imageUrl,
+                            SortOrder = sortOrder++,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.PostImages.Add(postImage);
+                        imageUrls.Add(imageUrl);
+                    }
+                    catch (Exception ex)
+                    {
+
+                        _logger.LogError(ex, $"Failed to upload image for post {post.PostId}");
+                    }
+                }
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation($" Uploaded {imageUrls.Count} images for post {post.PostId}");
+            }
+        
+
             var createdPost = await _context.Posts
             .Include(p => p.User)
             .Include(p => p.Place)
+            .Include(p=>p.Images)
             .FirstAsync(p => p.PostId == post.PostId, cancellationToken);
 
             return OperationResult<PostDto>.Success(new PostDto
@@ -61,7 +107,10 @@ namespace Application.Posts.CommandHandler
                 PlaceId = createdPost.PlaceId,
                 Title = createdPost.Title,
                 Content = createdPost.Content,
-                ImageUrl = createdPost.ImageUrl,
+                ImageUrls = createdPost.Images
+                    .OrderBy(i => i.SortOrder)
+                    .Select(i => i.ImageUrl)
+                    .ToList(),  
                 LikesCount = createdPost.LikesCount,
                 CreatedAt = createdPost.CreatedAt,
                 UpdatedAt = createdPost.UpdatedAt,

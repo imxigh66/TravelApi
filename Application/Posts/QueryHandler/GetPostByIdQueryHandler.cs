@@ -34,7 +34,6 @@ namespace Application.Posts.QueryHandler
                         Content = p.Content,
                         Title = p.Title,
                         LikesCount=p.LikesCount,
-                        ImageUrl = p.ImageUrl,
                         CreatedAt = p.CreatedAt,
                         UpdatedAt = p.UpdatedAt
                     })

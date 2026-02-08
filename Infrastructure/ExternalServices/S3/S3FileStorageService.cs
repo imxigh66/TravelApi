@@ -3,6 +3,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Application.Common.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -176,6 +177,37 @@ namespace Infrastructure.ExternalServices.S3
 
             // Прямой S3 URL
             return $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{fileKey}";
+        }
+
+
+        public async Task<string> UploadImageAsync(
+            IFormFile file,
+            string folder = "posts",
+            CancellationToken cancellationToken = default)
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File is empty");
+
+            // Валидация типа файла
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(extension))
+                throw new ArgumentException("Invalid file type. Only images are allowed.");
+
+            // Ограничение размера (5MB)
+            if (file.Length > 5 * 1024 * 1024)
+                throw new ArgumentException("File size must be less than 5MB");
+
+            // Создать уникальное имя файла
+            var fileName = $"{Guid.NewGuid()}{extension}";
+
+            // Получить MIME type
+            var contentType = file.ContentType;
+
+            // Вызвать базовый метод
+            using var stream = file.OpenReadStream();
+            return await UploadFileAsync(stream, fileName, contentType, folder, cancellationToken);
         }
     }
 }

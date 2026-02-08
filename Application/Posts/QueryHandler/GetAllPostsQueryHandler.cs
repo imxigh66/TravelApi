@@ -28,19 +28,31 @@ namespace Application.Posts.QueryHandler
         {
 
             var postQuery = _context.Posts
-            .AsNoTracking()
-            .Where(p => p.UserId == request.UserId)
-            .OrderByDescending(u => u.CreatedAt)
-            .ProjectTo<PostDto>(_mapper.ConfigurationProvider);
+        .AsNoTracking()
+        .Include(p => p.Images)  
+        .OrderByDescending(p => p.CreatedAt)
+        .Select(p => new PostDto
+        {
+            PostId = p.PostId,
+            UserId = p.UserId,
+            PlaceId = p.PlaceId,
+            Title = p.Title,
+            Content = p.Content,
+            ImageUrls = p.Images
+                .OrderBy(i => i.SortOrder)
+                .Select(i => i.ImageUrl)
+                .ToList(),  
+            LikesCount = p.LikesCount,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt
+        });
 
-          
             return await PaginatedList<PostDto>.CreateAsync(
                 postQuery,
                 request.PageNumber,
                 request.PageSize,
                 cancellationToken
             );
-
         }
     }
 }

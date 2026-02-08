@@ -15,7 +15,6 @@ namespace Domain.Entities
 
         public string? Title { get; set; }
         public string Content { get; set; } = null!;
-        public string? ImageUrl { get; set; }
 
         public int LikesCount { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -26,6 +25,7 @@ namespace Domain.Entities
         public Place? Place { get; set; }
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; }
+        public ICollection<PostImage> Images { get; set; } = new List<PostImage>();
     }
 
 }

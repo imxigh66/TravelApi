@@ -14,7 +14,7 @@ namespace Application.DTO.Posts
 
         public string? Title { get; set; }
         public string Content { get; set; } = null!;
-        public string? ImageUrl { get; set; }
+        public List<string> ImageUrls { get; set; } = new List<string>();
 
         public int LikesCount { get; set; }
         public DateTime CreatedAt { get; set; }

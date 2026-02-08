@@ -22,6 +22,7 @@ namespace Infrastructure
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<Like> Likes => Set<Like>();
 
+        public DbSet<PostImage> PostImages => Set<PostImage>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -131,7 +132,6 @@ namespace Infrastructure
                 e.ToTable("post");
                 e.HasKey(x => x.PostId);
                 e.Property(x => x.Title).HasMaxLength(200);
-                e.Property(x => x.ImageUrl).HasMaxLength(500);
                 e.HasIndex(x => new { x.UserId, x.CreatedAt }).HasDatabaseName("ix_post_user_created");
                 e.HasIndex(x => x.PlaceId).HasDatabaseName("ix_post_place");
                 e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_post_recent");
@@ -209,6 +209,21 @@ namespace Infrastructure
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
+            b.Entity<PostImage>(e =>
+            {
+                e.ToTable("post_image");
+                e.HasKey(x => x.PostImageId);
+                e.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
+                e.Property(x => x.SortOrder).IsRequired();
+
+                e.HasIndex(x => new { x.PostId, x.SortOrder })
+                 .HasDatabaseName("ix_post_image_post_sort");
+
+                e.HasOne(x => x.Post)
+                 .WithMany(p => p.Images)
+                 .HasForeignKey(x => x.PostId)
+                 .OnDelete(DeleteBehavior.Cascade);  
+            });
         }
     }
 
