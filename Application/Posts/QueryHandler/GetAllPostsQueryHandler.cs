@@ -26,22 +26,32 @@ namespace Application.Posts.QueryHandler
         }
         public async Task<PaginatedList<PostDto>> Handle(GetAllPostsQuery request, CancellationToken cancellationToken)
         {
-
-            var postQuery = _context.Posts
+            var query = _context.Posts
         .AsNoTracking()
-        .Include(p => p.Images)  
+        .Include(p => p.Images)
+        .Include(p => p.User)
+        .AsQueryable();
+
+            if (request.UserId.HasValue)
+            {
+                query = query.Where(p => p.UserId == request.UserId.Value);
+            }
+
+            var postQuery = query
         .OrderByDescending(p => p.CreatedAt)
         .Select(p => new PostDto
         {
             PostId = p.PostId,
             UserId = p.UserId,
+            Username = p.User.Username,
+            UserProfilePicture = p.User.ProfilePicture,
             PlaceId = p.PlaceId,
             Title = p.Title,
             Content = p.Content,
             ImageUrls = p.Images
                 .OrderBy(i => i.SortOrder)
                 .Select(i => i.ImageUrl)
-                .ToList(),  
+                .ToList(),
             LikesCount = p.LikesCount,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt

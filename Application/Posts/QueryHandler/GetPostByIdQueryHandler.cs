@@ -26,14 +26,22 @@ namespace Application.Posts.QueryHandler
            
             var post = await _context.Posts
                     .Where(p => p.PostId == request.PostId)
+                    .Include(p => p.Images)
+                    .Include(p => p.User)
                     .Select(p => new PostDto
                     {
                         PostId = p.PostId,
                         UserId = p.UserId,
+                        Username = p.User.Username,
+                        UserProfilePicture = p.User.ProfilePicture,
                         PlaceId = p.PlaceId,
-                        Content = p.Content,
                         Title = p.Title,
-                        LikesCount=p.LikesCount,
+                        Content = p.Content,
+                        ImageUrls = p.Images
+                .OrderBy(i => i.SortOrder)
+                .Select(i => i.ImageUrl)
+                .ToList(),
+                        LikesCount = p.LikesCount,
                         CreatedAt = p.CreatedAt,
                         UpdatedAt = p.UpdatedAt
                     })

@@ -10,6 +10,9 @@ namespace Application.DTO.Posts
     {
         public int PostId { get; set; }
         public int UserId { get; set; }
+
+        public string Username { get; set; } = null!;
+        public string? UserProfilePicture { get; set; }
         public int? PlaceId { get; set; }
 
         public string? Title { get; set; }
