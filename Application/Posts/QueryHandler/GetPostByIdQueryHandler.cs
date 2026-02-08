@@ -2,6 +2,7 @@
 using Application.Common.Models;
 using Application.DTO.Places;
 using Application.DTO.Posts;
+using Application.DTO.Users;
 using Application.Posts.Queries;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ namespace Application.Posts.QueryHandler
         }
         public async Task<OperationResult<PostDto>> Handle(GetPostByIdQuery request, CancellationToken cancellationToken)
         {
+           
             var post = await _context.Posts
                     .Where(p => p.PostId == request.PostId)
                     .Select(p => new PostDto
@@ -31,6 +33,7 @@ namespace Application.Posts.QueryHandler
                         PlaceId = p.PlaceId,
                         Content = p.Content,
                         Title = p.Title,
+                        LikesCount=p.LikesCount,
                         ImageUrl = p.ImageUrl,
                         CreatedAt = p.CreatedAt,
                         UpdatedAt = p.UpdatedAt

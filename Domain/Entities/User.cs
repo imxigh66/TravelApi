@@ -41,6 +41,7 @@ namespace Domain.Entities
 
         // NAV
         public ICollection<Post> Posts { get; set; } = new List<Post>();
+        public ICollection<Like> Likes { get; set; } = new List<Like>();
         public ICollection<Trip> Trips { get; set; } = new List<Trip>();           // как владелец
         public ICollection<Place> PlacesCreated { get; set; } = new List<Place>();  // created_by
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

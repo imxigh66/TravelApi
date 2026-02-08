@@ -11,6 +11,7 @@ namespace Application.Posts.Queries
 {
     public class GetAllPostsQuery:IRequest<PaginatedList<PostDto>>
     {
+        public int UserId { get; set; }
         public int PageSize { get; set; }
         public int PageNumber { get; set; }
     }

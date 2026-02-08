@@ -29,6 +29,7 @@ namespace Application.Posts.QueryHandler
 
             var postQuery = _context.Posts
             .AsNoTracking()
+            .Where(p => p.UserId == request.UserId)
             .OrderByDescending(u => u.CreatedAt)
             .ProjectTo<PostDto>(_mapper.ConfigurationProvider);
 
