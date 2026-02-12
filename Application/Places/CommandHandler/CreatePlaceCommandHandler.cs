@@ -1,8 +1,10 @@
-﻿using Application.DTO.Auth;
+﻿using Application.Common.Interfaces;
+using Application.Common.Models;
+using Application.DTO.Auth;
 using Application.DTO.Places;
 using Application.Places.Commands;
+using AutoMapper;
 using Domain.Entities;
-using Infrastructure;
 using MediatR;
 using MediatR.Pipeline;
 using Microsoft.EntityFrameworkCore;
@@ -16,39 +18,32 @@ namespace Application.Places.CommandHandler
 {
     public class CreatePlaceCommandHandler : IRequestHandler<CreatePlaceCommand, OperationResult<PlaceDto>>
     {
-        private readonly TravelDbContext _context;
-        public CreatePlaceCommandHandler(TravelDbContext context)
+        private readonly IApplicationDbContext _context;
+        private readonly IMapper _mapper;
+        public CreatePlaceCommandHandler(IApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
         public async Task<OperationResult<PlaceDto>> Handle(CreatePlaceCommand request, CancellationToken cancellationToken)
         {
             var exists = await _context.Places.AnyAsync(p => p.Name == request.Name, cancellationToken);
             if (exists)
             {
-                return new OperationResult<PlaceDto> { IsSuccess = false, Error = "This place already exists" };
+                return OperationResult<PlaceDto>.Failure("This place already exists");
             }
 
 
-            var place = new Place
-            {
-                Name = request.Name,
-                Description = request.Description,
-                CountryCode = request.CountryCode,
-                City = request.City,
-                Address = request.Address,
-                PlaceType = request.PlaceType,
-                CreatedAt = DateTime.UtcNow
-            };
+            var place = _mapper.Map<Place>(request);
+            place.CreatedAt = DateTime.UtcNow;
+
 
             _context.Places.Add(place);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new OperationResult<PlaceDto>
+            return  OperationResult<PlaceDto>.Success(new PlaceDto
             {
-                IsSuccess = true,
-                Data = new PlaceDto
-                {
+              
                     PlaceId = place.PlaceId,
                     Name = place.Name,
                     Description = place.Description,
@@ -57,8 +52,8 @@ namespace Application.Places.CommandHandler
                     Address = place.Address,
                     PlaceType = place.PlaceType,
                     CreatedAt = place.CreatedAt
-                }
-            };
+                
+            });
         }
     }
 }
