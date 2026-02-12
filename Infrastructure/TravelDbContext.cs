@@ -22,7 +22,7 @@ namespace Infrastructure
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<Like> Likes => Set<Like>();
 
-        public DbSet<PostImage> PostImages => Set<PostImage>();
+        public DbSet<Image> Images => Set<Image>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -40,6 +40,7 @@ namespace Infrastructure
                 e.Property(x => x.City).HasMaxLength(100);
                 e.Property(x => x.Bio).HasColumnType("nvarchar(max)");
                 e.Property(x => x.ProfilePicture).HasMaxLength(500);
+                e.Property(x => x.BannerImage).HasMaxLength(500);
                 // enums → string
                 e.Property(x => x.TravelInterest)
                     .HasConversion<string>(); 
@@ -209,20 +210,48 @@ namespace Infrastructure
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
-            b.Entity<PostImage>(e =>
+            b.Entity<Image>(e =>
             {
-                e.ToTable("post_image");
-                e.HasKey(x => x.PostImageId);
-                e.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
-                e.Property(x => x.SortOrder).IsRequired();
+                e.ToTable("images");
+                e.HasKey(x => x.ImageId);
 
-                e.HasIndex(x => new { x.PostId, x.SortOrder })
-                 .HasDatabaseName("ix_post_image_post_sort");
+                e.Property(x => x.EntityType)
+                    .HasConversion<string>()
+                    .IsRequired();
 
-                e.HasOne(x => x.Post)
-                 .WithMany(p => p.Images)
-                 .HasForeignKey(x => x.PostId)
-                 .OnDelete(DeleteBehavior.Cascade);  
+                e.Property(x => x.EntityId).IsRequired();
+
+                e.Property(x => x.ImageUrl)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                e.Property(x => x.ThumbnailUrl)
+                    .HasMaxLength(500);
+
+                e.Property(x => x.MimeType)
+                    .HasMaxLength(50);
+
+                e.Property(x => x.OriginalFileName)
+                    .HasMaxLength(255);
+
+                // Индексы
+                e.HasIndex(x => new { x.EntityType, x.EntityId })
+                    .HasDatabaseName("ix_images_entity");
+
+                e.HasIndex(x => new { x.EntityType, x.EntityId, x.SortOrder })
+                    .HasDatabaseName("ix_images_entity_sort");
+
+                e.HasIndex(x => new { x.EntityType, x.EntityId, x.IsCover })
+                    .HasDatabaseName("ix_images_cover");
+
+                e.HasIndex(x => x.CreatedAt)
+                    .HasDatabaseName("ix_images_created");
+
+                // Связь с пользователем
+                e.HasOne(x => x.Uploader)
+                    .WithMany()
+                    .HasForeignKey(x => x.UploadedBy)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

@@ -18,7 +18,7 @@ namespace Application.Common.Interfaces
         DbSet<Comment> Comments { get; }
         DbSet<RefreshToken> RefreshTokens { get; }
         DbSet<Like> Likes { get; }
-        DbSet<PostImage> PostImages { get; }
+        DbSet<Image> Images { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

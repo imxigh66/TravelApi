@@ -5,6 +5,7 @@ using Application.DTO.Posts;
 using Application.Posts.Commands;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -62,42 +63,41 @@ namespace Application.Posts.CommandHandler
             _context.Posts.Add(post);
             await _context.SaveChangesAsync(cancellationToken);
 
-            if(request.Images != null && request.Images.Any())
+            var imageUrls = new List<string>();
+
+            if (request.Images != null && request.Images.Any())
             {
-                var imageUrls = new List<string>();
-                var sortOrder = 1;
-                foreach (var imageFile in request.Images)
+                try
                 {
-                    try
+                    // Сервис загружает в S3 и возвращает готовые Image объекты
+                    var images = await _fileStorageService.UploadMultipleImagesAsync(
+                        request.Images.ToArray(),
+                        ImageEntityType.Post,
+                        post.PostId,
+                        request.UserId,
+                        cancellationToken);
+
+                    // Сохраняем напрямую через DbContext
+                    if (images.Any())
                     {
-                        var imageUrl = await _fileStorageService.UploadImageAsync(imageFile, "posts");
+                        _context.Images.AddRange(images);
+                        await _context.SaveChangesAsync(cancellationToken);
 
-                        var postImage = new PostImage
-                        {
-                            PostId = post.PostId,
-                            ImageUrl = imageUrl,
-                            SortOrder = sortOrder++,
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        _context.PostImages.Add(postImage);
-                        imageUrls.Add(imageUrl);
-                    }
-                    catch (Exception ex)
-                    {
-
-                        _logger.LogError(ex, $"Failed to upload image for post {post.PostId}");
+                        imageUrls = images.Select(i => i.ImageUrl).ToList();
+                        _logger.LogInformation($"✅ Uploaded {images.Count} images for post {post.PostId}");
                     }
                 }
-                await _context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation($" Uploaded {imageUrls.Count} images for post {post.PostId}");
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"❌ Failed to upload images for post {post.PostId}");
+                    // Продолжаем - пост создан, просто без изображений
+                }
             }
-        
+
 
             var createdPost = await _context.Posts
             .Include(p => p.User)
             .Include(p => p.Place)
-            .Include(p=>p.Images)
             .FirstAsync(p => p.PostId == post.PostId, cancellationToken);
 
             return OperationResult<PostDto>.Success(new PostDto
@@ -107,10 +107,7 @@ namespace Application.Posts.CommandHandler
                 PlaceId = createdPost.PlaceId,
                 Title = createdPost.Title,
                 Content = createdPost.Content,
-                ImageUrls = createdPost.Images
-                    .OrderBy(i => i.SortOrder)
-                    .Select(i => i.ImageUrl)
-                    .ToList(),  
+                ImageUrls = imageUrls,  
                 LikesCount = createdPost.LikesCount,
                 CreatedAt = createdPost.CreatedAt,
                 UpdatedAt = createdPost.UpdatedAt,

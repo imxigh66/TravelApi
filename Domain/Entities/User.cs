@@ -18,7 +18,7 @@ namespace Domain.Entities
         public string? City { get; set; } = null!;
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
-
+        public string? BannerImage { get; set; }
 
         public bool EmailConfirmed { get; set; } = false;
         public string? EmailConfirmationToken { get; set; }

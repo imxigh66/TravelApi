@@ -4,6 +4,7 @@ using Application.DTO.Places;
 using Application.DTO.Posts;
 using Application.DTO.Users;
 using Application.Posts.Queries;
+using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -26,7 +27,6 @@ namespace Application.Posts.QueryHandler
            
             var post = await _context.Posts
                     .Where(p => p.PostId == request.PostId)
-                    .Include(p => p.Images)
                     .Include(p => p.User)
                     .Select(p => new PostDto
                     {
@@ -37,7 +37,10 @@ namespace Application.Posts.QueryHandler
                         PlaceId = p.PlaceId,
                         Title = p.Title,
                         Content = p.Content,
-                        ImageUrls = p.Images
+                        ImageUrls = _context.Images
+                .Where(i => i.EntityType == ImageEntityType.Post
+                         && i.EntityId == p.PostId
+                         && i.IsActive)
                 .OrderBy(i => i.SortOrder)
                 .Select(i => i.ImageUrl)
                 .ToList(),

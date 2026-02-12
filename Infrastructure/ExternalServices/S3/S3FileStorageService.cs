@@ -3,6 +3,8 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Application.Common.Interfaces;
+using Domain.Entities;
+using Domain.Enum;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -63,38 +65,7 @@ namespace Infrastructure.ExternalServices.S3
             }
         }
 
-        private string? ExtractFileKeyFromUrl(string fileUrl)
-        {
-            try
-            {
-                // Если это CloudFront URL
-                if (_options.UseCloudFront && fileUrl.Contains(_options.CloudFrontUrl))
-                {
-                    var uri = new Uri(fileUrl);
-                    return uri.AbsolutePath.TrimStart('/');
-                }
-
-                // Если это S3 URL
-                if (fileUrl.Contains(".s3.") && fileUrl.Contains(".amazonaws.com/"))
-                {
-                    var uri = new Uri(fileUrl);
-                    return uri.AbsolutePath.TrimStart('/');
-                }
-
-                // Если передан просто ключ
-                if (!fileUrl.StartsWith("http"))
-                {
-                    return fileUrl;
-                }
-
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error extracting file key from URL: {fileUrl}");
-                return null;
-            }
-        }
+       
 
         public async Task<string> GetPreSignedUrlAsync(string fileKey, int expirationMinutes = 60)
         {
@@ -168,16 +139,7 @@ namespace Infrastructure.ExternalServices.S3
             }
         }
 
-        private string GetFileUrl(string fileKey)
-        {
-            if (_options.UseCloudFront && !string.IsNullOrEmpty(_options.CloudFrontUrl))
-            {
-                return $"{_options.CloudFrontUrl.TrimEnd('/')}/{fileKey}";
-            }
-
-            // Прямой S3 URL
-            return $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{fileKey}";
-        }
+       
 
 
         public async Task<string> UploadImageAsync(
@@ -208,6 +170,182 @@ namespace Infrastructure.ExternalServices.S3
             // Вызвать базовый метод
             using var stream = file.OpenReadStream();
             return await UploadFileAsync(stream, fileName, contentType, folder, cancellationToken);
+        }
+
+
+        public async Task<Image> UploadImageWithMetadataAsync(
+     IFormFile file,
+     ImageEntityType entityType,
+     int entityId,
+     int sortOrder,
+     bool isCover,
+     int? uploadedBy = null,
+     CancellationToken cancellationToken = default)
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File is empty");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(extension))
+                throw new ArgumentException("Invalid file type. Only images are allowed.");
+
+            if (file.Length > 5 * 1024 * 1024)
+                throw new ArgumentException("File size must be less than 5MB");
+
+            var folder = GetFolderByEntityType(entityType);
+            var fileName = $"{Guid.NewGuid()}{extension}";
+
+            // Получаем размеры изображения
+            int? width = null;
+            int? height = null;
+
+            using (var imageStream = file.OpenReadStream())
+            {
+                try
+                {
+                    using var loadedImage = await SixLabors.ImageSharp.Image.LoadAsync(imageStream, cancellationToken);
+                    width = loadedImage.Width;
+                    height = loadedImage.Height;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not read image dimensions");
+                }
+            }
+
+            // Загружаем файл
+            string imageUrl;
+            using (var stream = file.OpenReadStream())
+            {
+                imageUrl = await UploadFileAsync(
+                    stream,
+                    fileName,
+                    file.ContentType,
+                    folder,
+                    cancellationToken);
+            }
+
+            // Создаем объект ImageEntity
+            var imageEntity = new Image
+            {
+                EntityType = entityType,
+                EntityId = entityId,
+                ImageUrl = imageUrl,
+                SortOrder = sortOrder,
+                IsCover = isCover,
+                UploadedBy = uploadedBy,
+                CreatedAt = DateTime.UtcNow,
+                MimeType = file.ContentType,
+                OriginalFileName = file.FileName,
+                FileSize = file.Length,
+                Width = width,
+                Height = height,
+                IsActive = true
+            };
+
+            _logger.LogInformation(
+                $"✅ Image uploaded: {entityType}/{entityId} - {fileName} ({width}x{height}, {file.Length} bytes)");
+
+            return imageEntity;
+        }
+
+        public async Task<List<Image>> UploadMultipleImagesAsync(
+            IFormFile[] files,
+            ImageEntityType entityType,
+            int entityId,
+            int? uploadedBy = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (files == null || files.Length == 0)
+                return new List<Image>();
+
+            var images = new List<Image>();
+            var sortOrder = 1;
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var image = await UploadImageWithMetadataAsync(
+                        file,
+                        entityType,
+                        entityId,
+                        sortOrder,
+                        sortOrder == 1, // Первое фото = обложка
+                        uploadedBy,
+                        cancellationToken);
+
+                    images.Add(image);
+                    sortOrder++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Failed to upload image {file.FileName}");
+                    // Продолжаем загрузку остальных файлов
+                }
+            }
+
+            _logger.LogInformation(
+                $"✅ Uploaded {images.Count}/{files.Length} images for {entityType}/{entityId}");
+
+            return images;
+        }
+
+        // ============ PRIVATE HELPERS ============
+
+        private string? ExtractFileKeyFromUrl(string fileUrl)
+        {
+            try
+            {
+                if (_options.UseCloudFront && fileUrl.Contains(_options.CloudFrontUrl))
+                {
+                    var uri = new Uri(fileUrl);
+                    return uri.AbsolutePath.TrimStart('/');
+                }
+
+                if (fileUrl.Contains(".s3.") && fileUrl.Contains(".amazonaws.com/"))
+                {
+                    var uri = new Uri(fileUrl);
+                    return uri.AbsolutePath.TrimStart('/');
+                }
+
+                if (!fileUrl.StartsWith("http"))
+                {
+                    return fileUrl;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error extracting file key from URL: {fileUrl}");
+                return null;
+            }
+        }
+
+        private string GetFileUrl(string fileKey)
+        {
+            if (_options.UseCloudFront && !string.IsNullOrEmpty(_options.CloudFrontUrl))
+            {
+                return $"{_options.CloudFrontUrl.TrimEnd('/')}/{fileKey}";
+            }
+
+            return $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{fileKey}";
+        }
+
+        private static string GetFolderByEntityType(ImageEntityType entityType)
+        {
+            return entityType switch
+            {
+                ImageEntityType.Post => "posts",
+                ImageEntityType.Place => "places",
+                ImageEntityType.User => "profiles",
+                ImageEntityType.Review => "reviews",
+                ImageEntityType.Trip => "trips",
+                _ => "uploads"
+            };
         }
     }
 }

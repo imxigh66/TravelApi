@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,7 +26,8 @@ namespace Domain.Entities
         public Place? Place { get; set; }
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; }
-        public ICollection<PostImage> Images { get; set; } = new List<PostImage>();
+        [NotMapped]
+        public ICollection<Image> Images { get; set; } = new List<Image>();
     }
 
 }

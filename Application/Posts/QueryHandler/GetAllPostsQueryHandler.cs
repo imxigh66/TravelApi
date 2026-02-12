@@ -5,6 +5,7 @@ using Application.DTO.Users;
 using Application.Posts.Queries;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -28,7 +29,6 @@ namespace Application.Posts.QueryHandler
         {
             var query = _context.Posts
         .AsNoTracking()
-        .Include(p => p.Images)
         .Include(p => p.User)
         .AsQueryable();
 
@@ -48,7 +48,10 @@ namespace Application.Posts.QueryHandler
             PlaceId = p.PlaceId,
             Title = p.Title,
             Content = p.Content,
-            ImageUrls = p.Images
+            ImageUrls = _context.Images
+                .Where(i => i.EntityType == ImageEntityType.Post
+                         && i.EntityId == p.PostId
+                         && i.IsActive)
                 .OrderBy(i => i.SortOrder)
                 .Select(i => i.ImageUrl)
                 .ToList(),
