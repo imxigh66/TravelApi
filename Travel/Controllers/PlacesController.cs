@@ -8,6 +8,7 @@ using Application.Posts.Queries;
 using Domain.Enum;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace TravelApi.Controllers
 {
@@ -51,6 +52,31 @@ namespace TravelApi.Controllers
                 return BadRequest(ErrorResponse.BadRequest("Invalid place type"));
             }
 
+            //PlaceAdditionalInfo? additionalInfo = null;
+
+            //if (!string.IsNullOrEmpty(request.AdditionalInfoJson))
+            //{
+            //    try
+            //    {
+            //        additionalInfo = category switch
+            //        {
+            //            PlaceCategory.Food => JsonSerializer.Deserialize<FoodPlaceInfo>(request.AdditionalInfoJson),
+            //            PlaceCategory.Accommodation => JsonSerializer.Deserialize<AccommodationPlaceInfo>(request.AdditionalInfoJson),
+            //            PlaceCategory.Culture => JsonSerializer.Deserialize<CulturePlaceInfo>(request.AdditionalInfoJson),
+            //            PlaceCategory.Nature => JsonSerializer.Deserialize<NaturePlaceInfo>(request.AdditionalInfoJson),
+            //            PlaceCategory.Entertainment => JsonSerializer.Deserialize<EntertainmentPlaceInfo>(request.AdditionalInfoJson),
+            //            PlaceCategory.Shopping => JsonSerializer.Deserialize<ShoppingPlaceInfo>(request.AdditionalInfoJson),
+            //            PlaceCategory.Transport => JsonSerializer.Deserialize<TransportPlaceInfo>(request.AdditionalInfoJson),
+            //            PlaceCategory.Services => JsonSerializer.Deserialize<ServicePlaceInfo>(request.AdditionalInfoJson),
+            //            _ => null
+            //        };
+            //    }
+            //    catch (JsonException)
+            //    {
+            //        return BadRequest(ErrorResponse.BadRequest("Invalid AdditionalInfo JSON format"));
+            //    }
+            //}
+
             var command = new CreatePlaceCommand
             {
                 Name = request.Name,
@@ -62,7 +88,7 @@ namespace TravelApi.Controllers
                 Longitude = request.Longitude,
                 Category = category,
                 PlaceType = placeType,
-                AdditionalInfo = request.AdditionalInfo,
+                AdditionalInfoJson = request.AdditionalInfoJson,
                 Images = request.Images?.ToList()
             };
 

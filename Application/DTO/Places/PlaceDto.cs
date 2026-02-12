@@ -31,6 +31,8 @@ namespace Application.DTO.Places
         public int ReviewsCount { get; set; }
         public int SavesCount { get; set; }
 
+
+        public object? AdditionalInfo { get; set; }
         // Изображения
         public List<string> ImageUrls { get; set; } = new();
         public string? CoverImageUrl { get; set; }

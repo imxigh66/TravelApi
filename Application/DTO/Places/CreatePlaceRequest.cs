@@ -21,8 +21,8 @@ namespace Application.DTO.Places
         public string Category { get; set; } = null!; // Строка, конвертируем в enum
         public string PlaceType { get; set; } = null!; // Строка, конвертируем в enum
 
-     
-        public string? AdditionalInfo { get; set; }
+
+        public string? AdditionalInfoJson { get; set; }
 
         public List<IFormFile>? Images { get; set; } // ← Файлы изображений
     }

@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Application.Places.CommandHandler
@@ -52,6 +53,19 @@ namespace Application.Places.CommandHandler
                     $"Place '{request.Name}' already exists in {request.City}");
             }
 
+            if (!string.IsNullOrEmpty(request.AdditionalInfoJson))
+            {
+                try
+                {
+                    JsonDocument.Parse(request.AdditionalInfoJson);
+                    _logger.LogInformation("✅ Valid JSON");
+                }
+                catch (JsonException)
+                {
+                    return OperationResult<PlaceDto>.Failure("Invalid JSON format in AdditionalInfo");
+                }
+            }
+
             // 2. Создаем место
             var place = new Place
             {
@@ -64,7 +78,7 @@ namespace Application.Places.CommandHandler
                 Longitude = request.Longitude,
                 Category = request.Category,
                 PlaceType = request.PlaceType,
-                AdditionalInfo = request.AdditionalInfo,
+                AdditionalInfo = request.AdditionalInfoJson,
                 AverageRating = 0,
                 ReviewsCount = 0,
                 SavesCount = 0,
@@ -124,6 +138,35 @@ namespace Application.Places.CommandHandler
                 }
             }
 
+            PlaceAdditionalInfo? additionalInfoDto = null;
+
+            if (!string.IsNullOrEmpty(request.AdditionalInfoJson))
+            {
+                try
+                {
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                    additionalInfoDto = request.Category switch
+                    {
+                        PlaceCategory.Food => JsonSerializer.Deserialize<FoodPlaceInfo>(request.AdditionalInfoJson, jsonOptions),
+                        PlaceCategory.Accommodation => JsonSerializer.Deserialize<AccommodationPlaceInfo>(request.AdditionalInfoJson, jsonOptions),
+                        PlaceCategory.Culture => JsonSerializer.Deserialize<CulturePlaceInfo>(request.AdditionalInfoJson, jsonOptions),
+                        PlaceCategory.Nature => JsonSerializer.Deserialize<NaturePlaceInfo>(request.AdditionalInfoJson, jsonOptions),
+                        PlaceCategory.Entertainment => JsonSerializer.Deserialize<EntertainmentPlaceInfo>(request.AdditionalInfoJson, jsonOptions),
+                        PlaceCategory.Shopping => JsonSerializer.Deserialize<ShoppingPlaceInfo>(request.AdditionalInfoJson, jsonOptions),
+                        PlaceCategory.Transport => JsonSerializer.Deserialize<TransportPlaceInfo>(request.AdditionalInfoJson, jsonOptions),
+                        PlaceCategory.Services => JsonSerializer.Deserialize<ServicePlaceInfo>(request.AdditionalInfoJson, jsonOptions),
+                        _ => null
+                    };
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Failed to deserialize AdditionalInfo for response");
+                }
+            }
             // 4. Возвращаем DTO
             return OperationResult<PlaceDto>.Success(new PlaceDto
             {

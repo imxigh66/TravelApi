@@ -33,7 +33,7 @@ namespace Application.Places.Commands
         public string? Email { get; set; }
 
         // Дополнительная информация
-        public string? AdditionalInfo { get; set; }
+        public string? AdditionalInfoJson { get; set; }
 
         // Изображения
         public List<IFormFile>? Images { get; set; }
