@@ -13,7 +13,7 @@ namespace TravelApi.Controllers
 {
     [ApiController]
     [Route("api/posts")]
-    public class PostsController:ControllerBase
+    public class PostsController : ControllerBase
     {
         private readonly MediatR.IMediator _mediator;
         public PostsController(MediatR.IMediator mediator)
@@ -21,7 +21,7 @@ namespace TravelApi.Controllers
             _mediator = mediator;
         }
 
-        [Authorize] 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
@@ -70,7 +70,7 @@ namespace TravelApi.Controllers
         }
 
 
-        
+
         [HttpGet]
         public async Task<ActionResult<PaginatedList<PostDto>>> GetAllPosts(
     [FromQuery] int pageNumber = 1,
@@ -137,7 +137,7 @@ namespace TravelApi.Controllers
             return Ok(new { message = "Post liked successfully" });
         }
 
-        
+
         [Authorize]
         [HttpDelete("{postId}/like")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -166,7 +166,7 @@ namespace TravelApi.Controllers
             return Ok(new { message = "Post unliked successfully" });
         }
 
-        
+
         [HttpGet("{postId}/likes")]
         [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<UserDto>>> GetPostLikes(int postId)
@@ -174,6 +174,30 @@ namespace TravelApi.Controllers
             var query = new GetPostLikesQuery { PostId = postId };
             var result = await _mediator.Send(query);
             return Ok(result);
+        }
+
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeletePost(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+            var command = new DeletePostCommand
+            {
+                PostId = id,
+                UserId = userId
+            };
+            var result = await _mediator.Send(command);
+            if (!result)
+                return NotFound(ErrorResponse.NotFound("Post not found or you are not the owner"));
+            return NoContent();
         }
     }
 }
