@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces;
 using Domain.Entities;
+using Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -70,22 +71,82 @@ namespace Infrastructure
             });
 
             // PLACE
+            // PLACE
             b.Entity<Place>(e =>
             {
                 e.ToTable("place");
                 e.HasKey(x => x.PlaceId);
+
+                // Основные поля
                 e.Property(x => x.Name).HasMaxLength(150).IsRequired();
+                e.Property(x => x.Description).HasColumnType("nvarchar(max)");
+
+                // Локация
                 e.Property(x => x.CountryCode).HasMaxLength(2).IsRequired();
                 e.Property(x => x.City).HasMaxLength(100).IsRequired();
                 e.Property(x => x.Address).HasMaxLength(255);
-                e.Property(x => x.PlaceType).HasMaxLength(50);
-                e.HasIndex(x => new { x.CountryCode, x.City }).HasDatabaseName("ix_place_location");
-                e.HasIndex(x => x.PlaceType).HasDatabaseName("ix_place_type");
+                e.Property(x => x.Latitude).HasColumnType("decimal(10,8)");
+                e.Property(x => x.Longitude).HasColumnType("decimal(11,8)");
 
+                // Категоризация (enum → string)
+                e.Property(x => x.Category)
+                    .HasConversion<string>()
+                    .HasMaxLength(50)
+                    .IsRequired()
+                    .HasDefaultValue(PlaceCategory.Food);
+
+                e.Property(x => x.PlaceType)
+                    .HasConversion<string>()
+                    .HasMaxLength(50)
+                    .IsRequired()
+                    .HasDefaultValue(PlaceType.Restaurant);
+
+             
+
+                // Рейтинг
+                e.Property(x => x.AverageRating).HasColumnType("decimal(3,2)"); // 0.00 - 5.00
+                e.Property(x => x.ReviewsCount).HasDefaultValue(0);
+                e.Property(x => x.SavesCount).HasDefaultValue(0);
+                e.Property(x => x.ViewsCount).HasDefaultValue(0);
+
+                // Дополнительная информация
+                e.Property(x => x.AdditionalInfo).HasColumnType("nvarchar(max)");
+
+                // Владение бизнесом
+                e.Property(x => x.IsClaimed).HasDefaultValue(false);
+
+                // Метаданные
+                e.Property(x => x.IsActive).HasDefaultValue(true);
+
+                // Индексы
+                e.HasIndex(x => new { x.CountryCode, x.City })
+                    .HasDatabaseName("ix_place_location");
+
+                e.HasIndex(x => x.PlaceType)
+                    .HasDatabaseName("ix_place_type");
+
+                e.HasIndex(x => x.Category)
+                    .HasDatabaseName("ix_place_category");
+
+                e.HasIndex(x => new { x.IsActive, x.AverageRating })
+                    .HasDatabaseName("ix_place_active_rating");
+
+                e.HasIndex(x => new { x.Latitude, x.Longitude })
+                    .HasDatabaseName("ix_place_coordinates");
+
+                // Navigation Properties
                 e.HasOne(x => x.Creator)
-                 .WithMany(u => u.PlacesCreated)
-                 .HasForeignKey(x => x.CreatedBy)
-                 .OnDelete(DeleteBehavior.SetNull);
+                    .WithMany(u => u.PlacesCreated)
+                    .HasForeignKey(x => x.CreatedBy)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                e.HasOne(x => x.BusinessOwner)
+                    .WithMany()
+                    .HasForeignKey(x => x.BusinessOwnerId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                // Images - NotMapped (загружаются отдельно через Images таблицу)
+                e.Ignore(x => x.Images);
             });
 
             // TRIP

@@ -5,7 +5,9 @@ using Application.DTO.Posts;
 using Application.Places.Commands;
 using Application.Places.Queries;
 using Application.Posts.Queries;
+using Domain.Enum;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace TravelApi.Controllers
 {
@@ -21,36 +23,89 @@ namespace TravelApi.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CreatePlace([FromBody] CreatePlaceCommand command)
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ApiResponse<PlaceDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<PlaceDto>>> CreatePlace([FromForm] CreatePlaceRequest request)
         {
-            var result = await _mediator.Send(command);
-            if (!result.IsSuccess)
+            // Получаем userId из токена
+            //var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
+            //               ?? User.FindFirst(JwtRegisteredClaimNames.Sub)
+            //               ?? User.FindFirst("sub");
+
+            //if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            //{
+            //    return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+            //}
+
+            // Парсим Category из строки в enum
+            if (!Enum.TryParse<PlaceCategory>(request.Category, true, out var category))
             {
-                return BadRequest(new { error = result.Error });
+                return BadRequest(ErrorResponse.BadRequest("Invalid category"));
             }
-            return Ok(result.Data);
+
+            // Парсим PlaceType из строки в enum
+            if (!Enum.TryParse<PlaceType>(request.PlaceType, true, out var placeType))
+            {
+                return BadRequest(ErrorResponse.BadRequest("Invalid place type"));
+            }
+
+            var command = new CreatePlaceCommand
+            {
+                Name = request.Name,
+                Description = request.Description,
+                CountryCode = request.CountryCode,
+                City = request.City,
+                Address = request.Address,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                Category = category,
+                PlaceType = placeType,
+                AdditionalInfo = request.AdditionalInfo,
+                Images = request.Images?.ToList()
+            };
+
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return CreatedAtAction(
+                nameof(GetPlaceById),
+                new { id = result.Data!.PlaceId },
+                ApiResponse<PlaceDto>.SuccessResponse(result.Data, "Place created successfully"));
+        }
+        [HttpGet("{id:int}")]
+        [ProducesResponseType(typeof(ApiResponse<PlaceDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<PlaceDto>>> GetPlaceById(int id)
+        {
+            var query = new GetPlaceByIdQuery { PlaceId = id };
+            var result = await _mediator.Send(query);
+
+            if (!result.IsSuccess)
+                return NotFound(ErrorResponse.NotFound(result.Error!));
+
+            return Ok(ApiResponse<PlaceDto>.SuccessResponse(result.Data!));
         }
 
         [HttpGet]
+        [ProducesResponseType(typeof(PaginatedList<PlaceDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<PaginatedList<PlaceDto>>> GetAllPlaces(
-     [FromQuery] int pageNumber = 1,
-     [FromQuery] int pageSize = 10)
+              [FromQuery] int pageNumber = 1,
+              [FromQuery] int pageSize = 10,
+              [FromQuery] string? category = null,
+              [FromQuery] string? city = null)
         {
-            var query = new GetAllPlacesQuery { PageNumber = pageNumber, PageSize = pageSize };
+            var query = new GetAllPlacesQuery
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
             var result = await _mediator.Send(query);
             return Ok(result);
-        }
-
-        [HttpGet("{placeId}")]
-        public async Task<IActionResult> GetPlaceById(int placeId)
-        {
-            var query = new Application.Places.Queries.GetPlaceByIdQuery { PlaceId = placeId };
-            var result = await _mediator.Send(query);
-            if (!result.IsSuccess)
-            {
-                return NotFound(new { error = result.Error });
-            }
-            return Ok(result.Data);
         }
     }
 

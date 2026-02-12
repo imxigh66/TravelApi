@@ -2,6 +2,7 @@
 using Application.Common.Models;
 using Application.DTO.Places;
 using Application.Places.Queries;
+using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -32,7 +33,28 @@ namespace Application.Places.QueryHandler
                         CountryCode = p.CountryCode,
                         City = p.City,
                         Address = p.Address,
+                        Latitude = p.Latitude,
+                        Longitude = p.Longitude,
+                        Category = p.Category,
                         PlaceType = p.PlaceType,
+                        AverageRating = p.AverageRating,
+                        ReviewsCount = p.ReviewsCount,
+                        SavesCount = p.SavesCount,
+                        ImageUrls = _context.Images
+                .Where(i => i.EntityType == ImageEntityType.Place
+                         && i.EntityId == p.PlaceId
+                         && i.IsActive)
+                .OrderBy(i => i.SortOrder)
+                .Select(i => i.ImageUrl)
+                .ToList(),
+                        CoverImageUrl = _context.Images
+                        .Where(i => i.EntityType == ImageEntityType.Place
+                                 && i.EntityId == p.PlaceId
+                                 && i.IsCover
+                                 && i.IsActive)
+                        .Select(i => i.ImageUrl)
+                        .FirstOrDefault(),
+                        //CreatedBy = p.CreatedBy,
                         CreatedAt = p.CreatedAt
                     })
                     .FirstOrDefaultAsync(cancellationToken);

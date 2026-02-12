@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,11 +12,31 @@ namespace Application.DTO.Places
         public int PlaceId { get; set; }
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
-        public string CountryCode { get; set; } = null!; // CHAR(2)
+
+        // Локация
+        public string CountryCode { get; set; } = null!;
         public string City { get; set; } = null!;
         public string? Address { get; set; }
-        public string? PlaceType { get; set; }
-        public int? CreatedBy { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+
+        // Категоризация
+        public PlaceCategory Category { get; set; }
+        public PlaceType PlaceType { get; set; }
+
+        
+
+        // Рейтинг
+        public decimal AverageRating { get; set; }
+        public int ReviewsCount { get; set; }
+        public int SavesCount { get; set; }
+
+        // Изображения
+        public List<string> ImageUrls { get; set; } = new();
+        public string? CoverImageUrl { get; set; }
+
+        // Метаданные
+        //public int? CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }
