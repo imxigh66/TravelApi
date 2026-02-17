@@ -52,6 +52,7 @@ namespace Domain.Entities
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<TripPlace> TripPlaces { get; set; } = new List<TripPlace>();
         public ICollection<Image> Images { get; set; } = new List<Image>();
+        public ICollection<CategoryTagLink> CategoryTagLinks { get; set; } = new List<CategoryTagLink>();
     }
 }
 

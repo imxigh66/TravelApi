@@ -24,6 +24,8 @@ namespace Infrastructure
         public DbSet<Like> Likes => Set<Like>();
 
         public DbSet<Image> Images => Set<Image>();
+        public DbSet<CategoryTag> CategoryTags => Set<CategoryTag>();
+        public DbSet<CategoryTagLink> CategoryTagLinks => Set<CategoryTagLink>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -147,6 +149,31 @@ namespace Infrastructure
 
                 // Images - NotMapped (загружаются отдельно через Images таблицу)
                 e.Ignore(x => x.Images);
+            });
+
+            b.Entity<CategoryTag>(e =>
+            {
+                e.ToTable("category_tag");
+                e.HasKey(x => x.CategoryTagId);
+                e.Property(x => x.Name).HasMaxLength(100).IsRequired();
+                e.Property(x => x.Icon).HasMaxLength(100);
+                e.HasIndex(x => x.Name).IsUnique().HasDatabaseName("ix_category_tag_name");
+            });
+
+            b.Entity<CategoryTagLink>(e =>
+            {
+                e.ToTable("category_tag_link");
+                e.HasKey(x => new { x.PlaceId, x.CategoryTagId });
+
+                e.HasOne(x => x.Place)
+                 .WithMany(p => p.CategoryTagLinks)
+                 .HasForeignKey(x => x.PlaceId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.CategoryTag)
+                 .WithMany(c => c.CategoryTagLinks)
+                 .HasForeignKey(x => x.CategoryTagId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
 
             // TRIP
