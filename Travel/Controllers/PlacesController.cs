@@ -172,6 +172,74 @@ namespace TravelApi.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+
+
+        [HttpPut("{id}")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ApiResponse<PlaceDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<PlaceDto>>> UpdatePlace(
+    int id,
+    [FromForm] UpdatePlaceRequest request)
+        {
+            PlaceCategory? category = null;
+            if (!string.IsNullOrEmpty(request.Category))
+            {
+                if (!Enum.TryParse<PlaceCategory>(request.Category, true, out var parsedCategory))
+                    return BadRequest(ErrorResponse.BadRequest("Invalid category"));
+                category = parsedCategory;
+            }
+
+            PlaceType? placeType = null;
+            if (!string.IsNullOrEmpty(request.PlaceType))
+            {
+                if (!Enum.TryParse<PlaceType>(request.PlaceType, true, out var parsedType))
+                    return BadRequest(ErrorResponse.BadRequest("Invalid place type"));
+                placeType = parsedType;
+            }
+
+            List<MoodType>? moods = null;
+            if (request.Moods != null)
+            {
+                moods = new List<MoodType>();
+                foreach (var moodStr in request.Moods)
+                {
+                    var parts = moodStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var part in parts)
+                    {
+                        if (Enum.TryParse<MoodType>(part.Trim(), true, out var mood)
+                            && Enum.IsDefined(typeof(MoodType), mood))
+                            moods.Add(mood);
+                    }
+                }
+            }
+
+            var command = new UpdatePlaceCommand
+            {
+                PlaceId = id,
+                Name = request.Name,
+                Description = request.Description,
+                CountryCode = request.CountryCode,
+                City = request.City,
+                Address = request.Address,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                Category = category,
+                PlaceType = placeType,
+                AdditionalInfoJson = request.AdditionalInfoJson,
+                Moods = moods,
+                NewImages = request.NewImages?.ToList(),
+                DeleteImageIds = request.DeleteImageIds,
+                CoverImageId = request.CoverImageId,
+            };
+
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return NotFound(ErrorResponse.NotFound(result.Error!));
+
+            return Ok(ApiResponse<PlaceDto>.SuccessResponse(result.Data!, "Place updated successfully"));
+        }
     }
 
 }
