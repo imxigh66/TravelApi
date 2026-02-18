@@ -5,6 +5,7 @@ using Application.DTO.Users;
 using Application.Posts.Queries;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -26,20 +27,45 @@ namespace Application.Posts.QueryHandler
         }
         public async Task<PaginatedList<PostDto>> Handle(GetAllPostsQuery request, CancellationToken cancellationToken)
         {
+            var query = _context.Posts
+        .AsNoTracking()
+        .Include(p => p.User)
+        .AsQueryable();
 
-            var postQuery = _context.Posts
-            .AsNoTracking()
-            .OrderByDescending(u => u.CreatedAt)
-            .ProjectTo<PostDto>(_mapper.ConfigurationProvider);
+            if (request.UserId.HasValue)
+            {
+                query = query.Where(p => p.UserId == request.UserId.Value);
+            }
 
-          
+            var postQuery = query
+        .OrderByDescending(p => p.CreatedAt)
+        .Select(p => new PostDto
+        {
+            PostId = p.PostId,
+            UserId = p.UserId,
+            Username = p.User.Username,
+            UserProfilePicture = p.User.ProfilePicture,
+            PlaceId = p.PlaceId,
+            Title = p.Title,
+            Content = p.Content,
+            ImageUrls = _context.Images
+                .Where(i => i.EntityType == ImageEntityType.Post
+                         && i.EntityId == p.PostId
+                         && i.IsActive)
+                .OrderBy(i => i.SortOrder)
+                .Select(i => i.ImageUrl)
+                .ToList(),
+            LikesCount = p.LikesCount,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt
+        });
+
             return await PaginatedList<PostDto>.CreateAsync(
                 postQuery,
                 request.PageNumber,
                 request.PageSize,
                 cancellationToken
             );
-
         }
     }
 }

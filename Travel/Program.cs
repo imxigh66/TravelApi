@@ -1,3 +1,5 @@
+using Amazon.S3;
+using Amazon;
 using Application.Auth.Register.CommandHandler;
 using Application.Auth.Register.Commands;
 using Application.Common.Behaviors;
@@ -5,6 +7,8 @@ using Application.Common.Interfaces;
 using Application.Common.Mappings;
 using FluentValidation;
 using Infrastructure;
+using Infrastructure.ExternalServices.Email;
+using Infrastructure.ExternalServices.S3;
 using Infrastructure.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,6 +19,7 @@ using Microsoft.OpenApi;
 using System;
 using System.Text;
 using TravelApi.Middleware;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +32,34 @@ builder.Services.AddScoped<IApplicationDbContext>(sp =>
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+builder.Services.Configure<MailtrapOptions>(
+    builder.Configuration.GetSection("Mailtrap"));
+builder.Services.AddScoped<IEmailService, MailtrapService>();
+
+// ===== AWS S3 Configuration =====
+builder.Services.Configure<S3Options>(builder.Configuration.GetSection("AWS"));
+
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var config = builder.Configuration.GetSection("AWS").Get<S3Options>();
+
+    var s3Config = new AmazonS3Config
+    {
+        RegionEndpoint = RegionEndpoint.GetBySystemName(config!.Region)
+    };
+
+    // Если используются Access Key и Secret Key
+    if (!string.IsNullOrEmpty(config.AccessKeyId) && !string.IsNullOrEmpty(config.SecretAccessKey))
+    {
+        return new AmazonS3Client(config.AccessKeyId, config.SecretAccessKey, s3Config);
+    }
+
+    // Иначе используем IAM роли (для production на AWS)
+    return new AmazonS3Client(s3Config);
+});
+builder.Services.AddScoped<IImageProcessingService, ImageProcessingService>();
+builder.Services.AddScoped<IFileStorageService, S3FileStorageService>();
 
 builder.Services.AddMediatR(configuration =>
 {
@@ -65,7 +98,27 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
-builder.Services.AddControllers();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")  // React dev server
+              .AllowAnyMethod()                       // GET, POST, PUT, DELETE, etc.
+              .AllowAnyHeader()                       // Authorization, Content-Type, etc.
+              .AllowCredentials();                    // Cookies, Authorization headers
+    });
+});
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+     
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -100,6 +153,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 

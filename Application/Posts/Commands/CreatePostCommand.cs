@@ -1,6 +1,7 @@
 ﻿using Application.Common.Models;
 using Application.DTO.Posts;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace Application.Posts.Commands
 
         public string? Title { get; set; }
         public string Content { get; set; } = null!;
-        public string? ImageUrl { get; set; }
+        public List<IFormFile>? Images { get; set; }
 
         public int LikesCount { get; set; }
     }
