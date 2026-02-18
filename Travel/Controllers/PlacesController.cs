@@ -144,29 +144,51 @@ namespace TravelApi.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(PaginatedList<PlaceDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<PaginatedList<PlaceDto>>> GetAllPlaces(
-    [FromQuery] int pageNumber = 1,
-    [FromQuery] int pageSize = 10,
-    [FromQuery] string? category = null,
-    [FromQuery] string? city = null,
-    [FromQuery] string? mood = null)
+     [FromQuery] int pageNumber = 1,
+     [FromQuery] int pageSize = 10,
+     [FromQuery] int? categoryTagId = null,  // подборка модератора
+     [FromQuery] string? category = null,   // PlaceCategory
+     [FromQuery] string? placeType = null,   // PlaceType
+     [FromQuery] string? mood = null,   // MoodType
+     [FromQuery] string? city = null,
+     [FromQuery] string? countryCode = null,
+     [FromQuery] string? sortBy = null)   // rating | popular | newest
         {
-            MoodType? moodEnum = null;
+            PlaceCategory? categoryEnum = null;
+            if (!string.IsNullOrEmpty(category))
+            {
+                if (!Enum.TryParse<PlaceCategory>(category, true, out var c))
+                    return BadRequest(ErrorResponse.BadRequest($"Invalid category: '{category}'"));
+                categoryEnum = c;
+            }
 
+            PlaceType? placeTypeEnum = null;
+            if (!string.IsNullOrEmpty(placeType))
+            {
+                if (!Enum.TryParse<PlaceType>(placeType, true, out var pt))
+                    return BadRequest(ErrorResponse.BadRequest($"Invalid placeType: '{placeType}'"));
+                placeTypeEnum = pt;
+            }
+
+            MoodType? moodEnum = null;
             if (!string.IsNullOrEmpty(mood))
             {
-                if (Enum.TryParse<MoodType>(mood, out var parsedMood))
-                    moodEnum = parsedMood;
-                else
-                    return BadRequest($"Invalid mood value: '{mood}'");
+                if (!Enum.TryParse<MoodType>(mood, true, out var m))
+                    return BadRequest(ErrorResponse.BadRequest($"Invalid mood: '{mood}'"));
+                moodEnum = m;
             }
 
             var query = new GetAllPlacesQuery
             {
                 PageNumber = pageNumber,
                 PageSize = pageSize,
+                CategoryTagId = categoryTagId,
+                Category = categoryEnum,
+                PlaceType = placeTypeEnum,
+                Mood = moodEnum,
                 City = city,
-                Category = category,
-                Mood = moodEnum
+                CountryCode = countryCode,
+                SortBy = sortBy
             };
 
             var result = await _mediator.Send(query);

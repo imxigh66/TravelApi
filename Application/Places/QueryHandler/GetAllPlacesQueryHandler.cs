@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces;
 using Application.Common.Models;
+using Application.DTO.CategoryTags;
 using Application.DTO.Places;
 using Application.Places.Queries;
 using Domain.Entities;
@@ -23,76 +24,119 @@ namespace Application.Places.QueryHandler
             GetAllPlacesQuery request,
             CancellationToken cancellationToken)
         {
-        
-            var placesQuery = _context.Places
+            var query = _context.Places
                 .AsNoTracking()
                 .Where(p => p.IsActive);
 
+            // ── Фильтр по подборке модератора ──
+            if (request.CategoryTagId.HasValue)
+            {
+                query = query.Where(p =>
+                    p.CategoryTagLinks.Any(l => l.CategoryTagId == request.CategoryTagId.Value));
+            }
+
+            // ── Фильтр по категории ──
+            if (request.Category.HasValue)
+            {
+                query = query.Where(p => p.Category == request.Category.Value);
+            }
+
+            // ── Фильтр по подтипу ──
+            if (request.PlaceType.HasValue)
+            {
+                query = query.Where(p => p.PlaceType == request.PlaceType.Value);
+            }
+
+            // ── Фильтр по настроению ──
             if (request.Mood.HasValue)
             {
-                placesQuery = placesQuery
-                    .Where(p => p.Moods.Any(m => m.Mood == request.Mood.Value));
+                query = query.Where(p =>
+                    p.Moods.Any(m => m.Mood == request.Mood.Value));
             }
 
-            var paginatedPlaces = await PaginatedList<Place>.CreateAsync(
-                placesQuery.OrderByDescending(p => p.CreatedAt),
-                request.PageNumber,
-                request.PageSize,
-                cancellationToken);
-
-            if (!paginatedPlaces.Items.Any())
+            // ── Фильтр по городу ──
+            if (!string.IsNullOrEmpty(request.City))
             {
-                return new PaginatedList<PlaceDto>(
-                    new List<PlaceDto>(),
-                    paginatedPlaces.TotalCount,
-                    paginatedPlaces.PageNumber,
-                    paginatedPlaces.PageSize);
+                query = query.Where(p =>
+                    p.City.ToLower() == request.City.ToLower());
             }
 
-           
-            var placeIds = paginatedPlaces.Items.Select(p => p.PlaceId).ToList();
+            // ── Фильтр по стране ──
+            if (!string.IsNullOrEmpty(request.CountryCode))
+            {
+                query = query.Where(p => p.CountryCode == request.CountryCode);
+            }
 
-            var moodsByPlace = await _context.PlaceMoods
-    .AsNoTracking()
-    .Where(m => placeIds.Contains(m.PlaceId))
-    .GroupBy(m => m.PlaceId)
-    .ToDictionaryAsync(
-        g => g.Key,
-        g => g.Select(x => x.Mood).ToList(),
-        cancellationToken);
+            // ── Сортировка ──
+            query = request.SortBy switch
+            {
+                "rating" => query.OrderByDescending(p => p.AverageRating),
+                "popular" => query.OrderByDescending(p => p.ViewsCount),
+                "saves" => query.OrderByDescending(p => p.SavesCount),
+                _ => query.OrderByDescending(p => p.CreatedAt) // newest по умолчанию
+            };
+
+            // ── Пагинация ──
+            var paginated = await PaginatedList<Place>.CreateAsync(
+                query, request.PageNumber, request.PageSize, cancellationToken);
+
+            if (!paginated.Items.Any())
+                return new PaginatedList<PlaceDto>(
+                    new List<PlaceDto>(), paginated.TotalCount,
+                    paginated.PageNumber, paginated.PageSize);
+
+            // ── Загружаем изображения ──
+            var placeIds = paginated.Items.Select(p => p.PlaceId).ToList();
 
             var images = await _context.Images
                 .AsNoTracking()
                 .Where(i => i.EntityType == ImageEntityType.Place
                          && placeIds.Contains(i.EntityId)
                          && i.IsActive)
-                .OrderBy(i => i.EntityId)
-                .ThenBy(i => i.SortOrder)
+                .OrderBy(i => i.EntityId).ThenBy(i => i.SortOrder)
                 .ToListAsync(cancellationToken);
 
-        
             var imagesByPlace = images
                 .GroupBy(i => i.EntityId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(x => x.ImageUrl).ToList());
+                .ToDictionary(g => g.Key, g => g.Select(x => x.ImageUrl).ToList());
 
             var coverImages = images
                 .Where(i => i.IsCover)
                 .GroupBy(i => i.EntityId)
                 .ToDictionary(g => g.Key, g => g.First().ImageUrl);
 
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
+            // ── Загружаем moods ──
+            var moodsByPlace = await _context.PlaceMoods
+                .AsNoTracking()
+                .Where(m => placeIds.Contains(m.PlaceId))
+                .GroupBy(m => m.PlaceId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(x => x.Mood).ToList(),
+                    cancellationToken);
 
-          
-            var placeDtos = paginatedPlaces.Items.Select(p =>
+            // ── Загружаем теги подборок ──
+            var tagsByPlace = await _context.CategoryTagLinks
+                .AsNoTracking()
+                .Where(l => placeIds.Contains(l.PlaceId))
+                .Include(l => l.CategoryTag)
+                .GroupBy(l => l.PlaceId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(x => new CategoryTagDto
+                    {
+                        CategoryTagId = x.CategoryTag.CategoryTagId,
+                        Name = x.CategoryTag.Name,
+                        Icon = x.CategoryTag.Icon
+                    }).ToList(),
+                    cancellationToken);
+
+            // ── Маппинг в DTO ──
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            var dtos = paginated.Items.Select(p =>
             {
-                // Десериализуем AdditionalInfo по категории
                 object? additionalInfo = null;
-
                 if (!string.IsNullOrEmpty(p.AdditionalInfo))
                 {
                     try
@@ -110,10 +154,7 @@ namespace Application.Places.QueryHandler
                             _ => null
                         };
                     }
-                    catch (JsonException)
-                    {
-                      
-                    }
+                    catch (JsonException) { }
                 }
 
                 return new PlaceDto
@@ -131,20 +172,18 @@ namespace Application.Places.QueryHandler
                     AverageRating = p.AverageRating,
                     ReviewsCount = p.ReviewsCount,
                     SavesCount = p.SavesCount,
-                    AdditionalInfo = additionalInfo, 
+                    AdditionalInfo = additionalInfo,
+                    Moods = moodsByPlace.GetValueOrDefault(p.PlaceId) ?? new List<MoodType>(),
+                    CategoryTags = tagsByPlace.GetValueOrDefault(p.PlaceId) ?? new List<CategoryTagDto>(),
                     ImageUrls = imagesByPlace.GetValueOrDefault(p.PlaceId) ?? new List<string>(),
                     CoverImageUrl = coverImages.GetValueOrDefault(p.PlaceId),
-                    Moods = moodsByPlace.GetValueOrDefault(p.PlaceId) ?? new List<MoodType>(),
                     CreatedAt = p.CreatedAt
                 };
             }).ToList();
 
-            
             return new PaginatedList<PlaceDto>(
-                placeDtos,
-                paginatedPlaces.TotalCount,
-                paginatedPlaces.PageNumber,
-                paginatedPlaces.PageSize);
+                dtos, paginated.TotalCount,
+                paginated.PageNumber, paginated.PageSize);
         }
     }
 }

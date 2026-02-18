@@ -14,8 +14,14 @@ namespace Application.Places.Queries
     {
         public int PageSize { get; set; }
         public int PageNumber { get; set; }
-        public string? Category { get; set; }
+        public int? CategoryTagId { get; set; }     // подборка модератора
+        public PlaceCategory? Category { get; set; } // тип места
+        public PlaceType? PlaceType { get; set; }    // подтип
+        public MoodType? Mood { get; set; }          // настроение
         public string? City { get; set; }
-        public MoodType? Mood { get; set; }
+        public string? CountryCode { get; set; }
+
+        // Сортировка
+        public string? SortBy { get; set; }
     }
 }

@@ -13,16 +13,12 @@ namespace Domain.Enum
         Solo = 1,
         WithFamily = 2,
         RomanticDate = 3,
-        Corporate = 4,
 
         // Вайб (10–19)
         Special = 10,
         Calm = 11,
         Surprise = 12,
         Active = 13,
-        Cultural = 14,
-        Foodie = 15,
-        NightOut = 16,
-        Nature = 17
+        NightOut = 16
     }
 }

@@ -1,4 +1,5 @@
-﻿using Domain.Enum;
+﻿using Application.DTO.CategoryTags;
+using Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,6 +38,7 @@ namespace Application.DTO.Places
         public List<string> ImageUrls { get; set; } = new();
         public string? CoverImageUrl { get; set; }
         public List<MoodType> Moods { get; set; } = new();
+        public List<CategoryTagDto> CategoryTags { get; set; } = new();
         // Метаданные
         //public int? CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
