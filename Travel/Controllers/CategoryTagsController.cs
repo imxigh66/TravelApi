@@ -4,6 +4,7 @@ using Application.Common.Models;
 using Application.DTO.CategoryTags;
 using Application.DTO.Places;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TravelApi.Controllers
@@ -19,6 +20,8 @@ namespace TravelApi.Controllers
             _mediator = mediator;
         }
 
+
+        [Authorize(Roles = "Moderator")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCategoryTagCommand command)
         {
@@ -36,6 +39,7 @@ namespace TravelApi.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Moderator")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryTagCommand command)
         {
@@ -47,6 +51,7 @@ namespace TravelApi.Controllers
             return Ok(ApiResponse<CategoryTagDto>.SuccessResponse(result.Data!));
         }
 
+        [Authorize(Roles = "Moderator")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -57,6 +62,7 @@ namespace TravelApi.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Moderator")]
         [HttpPut("places/{placeId}")]
         public async Task<IActionResult> AssignTagsToPlace(int placeId, [FromBody] List<int> categoryTagIds)
         {
