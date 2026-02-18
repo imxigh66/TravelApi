@@ -8,7 +8,7 @@ namespace Application.Common.Interfaces
 {
     public interface IJwtTokenService
     {
-        string GenerateAccessToken(int userId, string email, string username);
+        string GenerateAccessToken(int userId, string email, string username, string role);
         string GenerateRefreshToken();
         int? ValidateToken(string token);
     }

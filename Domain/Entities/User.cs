@@ -39,6 +39,8 @@ namespace Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
+        public UserRole Role { get; set; } = UserRole.User;
+
         // NAV
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<Like> Likes { get; set; } = new List<Like>();

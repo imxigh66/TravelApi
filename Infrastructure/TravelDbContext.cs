@@ -67,6 +67,10 @@ namespace Infrastructure
 
                 e.Property(x => x.BusinessPhone)
                     .HasMaxLength(30);
+                e.Property(x => x.Role)
+                    .HasConversion<string>()
+                    .HasMaxLength(20)
+                    .HasDefaultValue(UserRole.User);
 
                 e.HasIndex(x => x.Username).IsUnique();
                 e.HasIndex(x => x.Email).IsUnique();
