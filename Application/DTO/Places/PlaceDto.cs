@@ -36,7 +36,7 @@ namespace Application.DTO.Places
         // Изображения
         public List<string> ImageUrls { get; set; } = new();
         public string? CoverImageUrl { get; set; }
-
+        public List<MoodType> Moods { get; set; } = new();
         // Метаданные
         //public int? CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }

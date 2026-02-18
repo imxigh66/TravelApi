@@ -52,6 +52,30 @@ namespace TravelApi.Controllers
                 return BadRequest(ErrorResponse.BadRequest("Invalid place type"));
             }
 
+            var moods = new List<MoodType>();
+
+            if (request.Moods != null)
+            {
+                foreach (var moodStr in request.Moods)
+                {
+                    // Разбиваем на случай если Swagger прислал "16,10" одной строкой
+                    var parts = moodStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+                    foreach (var part in parts)
+                    {
+                        var trimmed = part.Trim();
+
+                        // Пробуем парсить как строку ("WithCompany")
+                        if (Enum.TryParse<MoodType>(trimmed, ignoreCase: true, out var mood)
+                            && Enum.IsDefined(typeof(MoodType), mood)) // ← не допускает числовые комбинации
+                        {
+                            moods.Add(mood);
+                        }
+                    }
+                }
+
+                moods = moods.Distinct().ToList();
+            }
             //PlaceAdditionalInfo? additionalInfo = null;
 
             //if (!string.IsNullOrEmpty(request.AdditionalInfoJson))
@@ -89,6 +113,7 @@ namespace TravelApi.Controllers
                 Category = category,
                 PlaceType = placeType,
                 AdditionalInfoJson = request.AdditionalInfoJson,
+                Moods = moods,
                 Images = request.Images?.ToList()
             };
 
@@ -119,15 +144,29 @@ namespace TravelApi.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(PaginatedList<PlaceDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<PaginatedList<PlaceDto>>> GetAllPlaces(
-              [FromQuery] int pageNumber = 1,
-              [FromQuery] int pageSize = 10,
-              [FromQuery] string? category = null,
-              [FromQuery] string? city = null)
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] string? category = null,
+    [FromQuery] string? city = null,
+    [FromQuery] string? mood = null)
         {
+            MoodType? moodEnum = null;
+
+            if (!string.IsNullOrEmpty(mood))
+            {
+                if (Enum.TryParse<MoodType>(mood, out var parsedMood))
+                    moodEnum = parsedMood;
+                else
+                    return BadRequest($"Invalid mood value: '{mood}'");
+            }
+
             var query = new GetAllPlacesQuery
             {
                 PageNumber = pageNumber,
-                PageSize = pageSize
+                PageSize = pageSize,
+                City = city,
+                Category = category,
+                Mood = moodEnum
             };
 
             var result = await _mediator.Send(query);

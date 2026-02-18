@@ -101,6 +101,13 @@ namespace Application.Places.QueryHandler
                 _logger.LogInformation($"ℹ️ No AdditionalInfo for place {place.PlaceId}");
             }
 
+
+            var moods = await _context.PlaceMoods
+    .AsNoTracking()
+    .Where(m => m.PlaceId == place.PlaceId)
+    .Select(m => m.Mood)
+    .ToListAsync(cancellationToken);
+
             var dto = new PlaceDto
             {
                 PlaceId = place.PlaceId,
@@ -119,6 +126,7 @@ namespace Application.Places.QueryHandler
                 AdditionalInfo = additionalInfo, // ← Типизированный объект
                 ImageUrls = images.Select(i => i.ImageUrl).ToList(),
                 CoverImageUrl = images.FirstOrDefault(i => i.IsCover)?.ImageUrl,
+                Moods = moods, 
                 CreatedAt = place.CreatedAt
             };
 

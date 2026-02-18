@@ -26,6 +26,7 @@ namespace Infrastructure
         public DbSet<Image> Images => Set<Image>();
         public DbSet<CategoryTag> CategoryTags => Set<CategoryTag>();
         public DbSet<CategoryTagLink> CategoryTagLinks => Set<CategoryTagLink>();
+        public DbSet<PlaceMood> PlaceMoods => Set<PlaceMood>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -178,6 +179,26 @@ namespace Infrastructure
                  .WithMany(c => c.CategoryTagLinks)
                  .HasForeignKey(x => x.CategoryTagId)
                  .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<PlaceMood>(e =>
+            {
+                e.ToTable("place_mood");
+
+        
+                e.HasKey(x => new { x.PlaceId, x.Mood });
+
+                e.Property(x => x.Mood)
+                    .HasConversion<string>()
+                    .HasMaxLength(30);
+
+                e.HasIndex(x => x.Mood)
+                    .HasDatabaseName("ix_place_mood_type");
+
+                e.HasOne(x => x.Place)
+                    .WithMany(p => p.Moods)
+                    .HasForeignKey(x => x.PlaceId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // TRIP

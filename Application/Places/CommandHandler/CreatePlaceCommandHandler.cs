@@ -138,6 +138,20 @@ namespace Application.Places.CommandHandler
                 }
             }
 
+            if (request.Moods != null && request.Moods.Any())
+            {
+                var moods = request.Moods
+                    .Distinct()
+                    .Select(m => new PlaceMood
+                    {
+                        PlaceId = place.PlaceId,
+                        Mood = m
+                    });
+
+                _context.PlaceMoods.AddRange(moods);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
             PlaceAdditionalInfo? additionalInfoDto = null;
 
             if (!string.IsNullOrEmpty(request.AdditionalInfoJson))

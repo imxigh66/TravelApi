@@ -28,7 +28,11 @@ namespace Application.Places.QueryHandler
                 .AsNoTracking()
                 .Where(p => p.IsActive);
 
-       
+            if (request.Mood.HasValue)
+            {
+                placesQuery = placesQuery
+                    .Where(p => p.Moods.Any(m => m.Mood == request.Mood.Value));
+            }
 
             var paginatedPlaces = await PaginatedList<Place>.CreateAsync(
                 placesQuery.OrderByDescending(p => p.CreatedAt),
@@ -47,6 +51,15 @@ namespace Application.Places.QueryHandler
 
            
             var placeIds = paginatedPlaces.Items.Select(p => p.PlaceId).ToList();
+
+            var moodsByPlace = await _context.PlaceMoods
+    .AsNoTracking()
+    .Where(m => placeIds.Contains(m.PlaceId))
+    .GroupBy(m => m.PlaceId)
+    .ToDictionaryAsync(
+        g => g.Key,
+        g => g.Select(x => x.Mood).ToList(),
+        cancellationToken);
 
             var images = await _context.Images
                 .AsNoTracking()
@@ -121,6 +134,7 @@ namespace Application.Places.QueryHandler
                     AdditionalInfo = additionalInfo, 
                     ImageUrls = imagesByPlace.GetValueOrDefault(p.PlaceId) ?? new List<string>(),
                     CoverImageUrl = coverImages.GetValueOrDefault(p.PlaceId),
+                    Moods = moodsByPlace.GetValueOrDefault(p.PlaceId) ?? new List<MoodType>(),
                     CreatedAt = p.CreatedAt
                 };
             }).ToList();

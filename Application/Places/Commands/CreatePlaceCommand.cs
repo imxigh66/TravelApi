@@ -38,6 +38,8 @@ namespace Application.Places.Commands
         // Изображения
         public List<IFormFile>? Images { get; set; }
 
+        public List<MoodType>? Moods { get; set; }
+
         // Кто создает
         public int? CreatedBy { get; set; }
     }
