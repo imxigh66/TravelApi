@@ -40,7 +40,8 @@ namespace Application.Auth.RefreshToken.CommandHandler
             var newAccessToken = _jwtTokenService.GenerateAccessToken(
                 user.UserId,
                 user.Email,
-                user.Username);
+                user.Username,
+                user.Role.ToString());
             var newRefreshTokenValue = _jwtTokenService.GenerateRefreshToken();
 
             refreshToken.IsRevoked = true;

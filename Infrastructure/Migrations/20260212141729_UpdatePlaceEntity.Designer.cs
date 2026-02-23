@@ -4,6 +4,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(TravelDbContext))]
-    partial class TravelDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260212141729_UpdatePlaceEntity")]
+    partial class UpdatePlaceEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,50 +24,6 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Domain.Entities.CategoryTag", b =>
-                {
-                    b.Property<int>("CategoryTagId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryTagId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Icon")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("CategoryTagId");
-
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("ix_category_tag_name");
-
-                    b.ToTable("category_tag", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.CategoryTagLink", b =>
-                {
-                    b.Property<int>("PlaceId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CategoryTagId")
-                        .HasColumnType("int");
-
-                    b.HasKey("PlaceId", "CategoryTagId");
-
-                    b.HasIndex("CategoryTagId");
-
-                    b.ToTable("category_tag_link", (string)null);
-                });
 
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
@@ -228,10 +187,8 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("Food");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("City")
                         .IsRequired()
@@ -278,10 +235,8 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("PlaceType")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("Restaurant");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("ReviewsCount")
                         .ValueGeneratedOnAdd()
@@ -323,23 +278,6 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("ix_place_coordinates");
 
                     b.ToTable("place", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.PlaceMood", b =>
-                {
-                    b.Property<int>("PlaceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Mood")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.HasKey("PlaceId", "Mood");
-
-                    b.HasIndex("Mood")
-                        .HasDatabaseName("ix_place_mood_type");
-
-                    b.ToTable("place_mood", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Post", b =>
@@ -574,13 +512,6 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("User");
-
                     b.Property<string>("TravelInterest")
                         .HasColumnType("nvarchar(max)");
 
@@ -604,25 +535,6 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.CategoryTagLink", b =>
-                {
-                    b.HasOne("Domain.Entities.CategoryTag", "CategoryTag")
-                        .WithMany("CategoryTagLinks")
-                        .HasForeignKey("CategoryTagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Place", "Place")
-                        .WithMany("CategoryTagLinks")
-                        .HasForeignKey("PlaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CategoryTag");
-
-                    b.Navigation("Place");
                 });
 
             modelBuilder.Entity("Domain.Entities.Comment", b =>
@@ -690,17 +602,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Creator");
                 });
 
-            modelBuilder.Entity("Domain.Entities.PlaceMood", b =>
-                {
-                    b.HasOne("Domain.Entities.Place", "Place")
-                        .WithMany("Moods")
-                        .HasForeignKey("PlaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Place");
-                });
-
             modelBuilder.Entity("Domain.Entities.Post", b =>
                 {
                     b.HasOne("Domain.Entities.Place", "Place")
@@ -760,17 +661,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Trip");
                 });
 
-            modelBuilder.Entity("Domain.Entities.CategoryTag", b =>
-                {
-                    b.Navigation("CategoryTagLinks");
-                });
-
             modelBuilder.Entity("Domain.Entities.Place", b =>
                 {
-                    b.Navigation("CategoryTagLinks");
-
-                    b.Navigation("Moods");
-
                     b.Navigation("Posts");
 
                     b.Navigation("TripPlaces");

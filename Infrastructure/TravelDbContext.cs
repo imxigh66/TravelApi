@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces;
 using Domain.Entities;
+using Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,9 @@ namespace Infrastructure
         public DbSet<Like> Likes => Set<Like>();
 
         public DbSet<Image> Images => Set<Image>();
+        public DbSet<CategoryTag> CategoryTags => Set<CategoryTag>();
+        public DbSet<CategoryTagLink> CategoryTagLinks => Set<CategoryTagLink>();
+        public DbSet<PlaceMood> PlaceMoods => Set<PlaceMood>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -64,28 +68,137 @@ namespace Infrastructure
 
                 e.Property(x => x.BusinessPhone)
                     .HasMaxLength(30);
+                e.Property(x => x.Role)
+                    .HasConversion<string>()
+                    .HasMaxLength(20)
+                    .HasDefaultValue(UserRole.User);
 
                 e.HasIndex(x => x.Username).IsUnique();
                 e.HasIndex(x => x.Email).IsUnique();
             });
 
             // PLACE
+            // PLACE
             b.Entity<Place>(e =>
             {
                 e.ToTable("place");
                 e.HasKey(x => x.PlaceId);
+
+                // Основные поля
                 e.Property(x => x.Name).HasMaxLength(150).IsRequired();
+                e.Property(x => x.Description).HasColumnType("nvarchar(max)");
+
+                // Локация
                 e.Property(x => x.CountryCode).HasMaxLength(2).IsRequired();
                 e.Property(x => x.City).HasMaxLength(100).IsRequired();
                 e.Property(x => x.Address).HasMaxLength(255);
-                e.Property(x => x.PlaceType).HasMaxLength(50);
-                e.HasIndex(x => new { x.CountryCode, x.City }).HasDatabaseName("ix_place_location");
-                e.HasIndex(x => x.PlaceType).HasDatabaseName("ix_place_type");
+                e.Property(x => x.Latitude).HasColumnType("decimal(10,8)");
+                e.Property(x => x.Longitude).HasColumnType("decimal(11,8)");
 
+                // Категоризация (enum → string)
+                e.Property(x => x.Category)
+                    .HasConversion<string>()
+                    .HasMaxLength(50)
+                    .IsRequired()
+                    .HasDefaultValue(PlaceCategory.Food);
+
+                e.Property(x => x.PlaceType)
+                    .HasConversion<string>()
+                    .HasMaxLength(50)
+                    .IsRequired()
+                    .HasDefaultValue(PlaceType.Restaurant);
+
+             
+
+                // Рейтинг
+                e.Property(x => x.AverageRating).HasColumnType("decimal(3,2)"); // 0.00 - 5.00
+                e.Property(x => x.ReviewsCount).HasDefaultValue(0);
+                e.Property(x => x.SavesCount).HasDefaultValue(0);
+                e.Property(x => x.ViewsCount).HasDefaultValue(0);
+
+                // Дополнительная информация
+                e.Property(x => x.AdditionalInfo).HasColumnType("nvarchar(max)");
+
+                // Владение бизнесом
+                e.Property(x => x.IsClaimed).HasDefaultValue(false);
+
+                // Метаданные
+                e.Property(x => x.IsActive).HasDefaultValue(true);
+
+                // Индексы
+                e.HasIndex(x => new { x.CountryCode, x.City })
+                    .HasDatabaseName("ix_place_location");
+
+                e.HasIndex(x => x.PlaceType)
+                    .HasDatabaseName("ix_place_type");
+
+                e.HasIndex(x => x.Category)
+                    .HasDatabaseName("ix_place_category");
+
+                e.HasIndex(x => new { x.IsActive, x.AverageRating })
+                    .HasDatabaseName("ix_place_active_rating");
+
+                e.HasIndex(x => new { x.Latitude, x.Longitude })
+                    .HasDatabaseName("ix_place_coordinates");
+
+                // Navigation Properties
                 e.HasOne(x => x.Creator)
-                 .WithMany(u => u.PlacesCreated)
-                 .HasForeignKey(x => x.CreatedBy)
-                 .OnDelete(DeleteBehavior.SetNull);
+                    .WithMany(u => u.PlacesCreated)
+                    .HasForeignKey(x => x.CreatedBy)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                e.HasOne(x => x.BusinessOwner)
+                    .WithMany()
+                    .HasForeignKey(x => x.BusinessOwnerId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                // Images - NotMapped (загружаются отдельно через Images таблицу)
+                e.Ignore(x => x.Images);
+            });
+
+            b.Entity<CategoryTag>(e =>
+            {
+                e.ToTable("category_tag");
+                e.HasKey(x => x.CategoryTagId);
+                e.Property(x => x.Name).HasMaxLength(100).IsRequired();
+                e.Property(x => x.Icon).HasMaxLength(100);
+                e.HasIndex(x => x.Name).IsUnique().HasDatabaseName("ix_category_tag_name");
+            });
+
+            b.Entity<CategoryTagLink>(e =>
+            {
+                e.ToTable("category_tag_link");
+                e.HasKey(x => new { x.PlaceId, x.CategoryTagId });
+
+                e.HasOne(x => x.Place)
+                 .WithMany(p => p.CategoryTagLinks)
+                 .HasForeignKey(x => x.PlaceId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.CategoryTag)
+                 .WithMany(c => c.CategoryTagLinks)
+                 .HasForeignKey(x => x.CategoryTagId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<PlaceMood>(e =>
+            {
+                e.ToTable("place_mood");
+
+        
+                e.HasKey(x => new { x.PlaceId, x.Mood });
+
+                e.Property(x => x.Mood)
+                    .HasConversion<string>()
+                    .HasMaxLength(30);
+
+                e.HasIndex(x => x.Mood)
+                    .HasDatabaseName("ix_place_mood_type");
+
+                e.HasOne(x => x.Place)
+                    .WithMany(p => p.Moods)
+                    .HasForeignKey(x => x.PlaceId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // TRIP

@@ -4,6 +4,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(TravelDbContext))]
-    partial class TravelDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260218111211_AddRoleToUser2")]
+    partial class AddRoleToUser2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -323,23 +326,6 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("ix_place_coordinates");
 
                     b.ToTable("place", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.PlaceMood", b =>
-                {
-                    b.Property<int>("PlaceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Mood")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.HasKey("PlaceId", "Mood");
-
-                    b.HasIndex("Mood")
-                        .HasDatabaseName("ix_place_mood_type");
-
-                    b.ToTable("place_mood", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Post", b =>
@@ -690,17 +676,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Creator");
                 });
 
-            modelBuilder.Entity("Domain.Entities.PlaceMood", b =>
-                {
-                    b.HasOne("Domain.Entities.Place", "Place")
-                        .WithMany("Moods")
-                        .HasForeignKey("PlaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Place");
-                });
-
             modelBuilder.Entity("Domain.Entities.Post", b =>
                 {
                     b.HasOne("Domain.Entities.Place", "Place")
@@ -768,8 +743,6 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Place", b =>
                 {
                     b.Navigation("CategoryTagLinks");
-
-                    b.Navigation("Moods");
 
                     b.Navigation("Posts");
 

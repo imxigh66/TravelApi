@@ -1,6 +1,8 @@
 ﻿using Application.Common.Models;
 using Application.DTO.Places;
+using Domain.Enum;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,9 +15,32 @@ namespace Application.Places.Commands
     {
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
-        public string CountryCode { get; set; } = null!; // CHAR(2)
+
+        // Локация
+        public string CountryCode { get; set; } = null!;
         public string City { get; set; } = null!;
         public string? Address { get; set; }
-        public string? PlaceType { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+
+        // Категоризация
+        public PlaceCategory Category { get; set; }
+        public PlaceType PlaceType { get; set; }
+
+        // Контакты
+        public string? Phone { get; set; }
+        public string? Website { get; set; }
+        public string? Email { get; set; }
+
+        // Дополнительная информация
+        public string? AdditionalInfoJson { get; set; }
+
+        // Изображения
+        public List<IFormFile>? Images { get; set; }
+
+        public List<MoodType>? Moods { get; set; }
+
+        // Кто создает
+        public int? CreatedBy { get; set; }
     }
 }

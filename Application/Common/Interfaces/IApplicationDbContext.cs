@@ -19,6 +19,9 @@ namespace Application.Common.Interfaces
         DbSet<RefreshToken> RefreshTokens { get; }
         DbSet<Like> Likes { get; }
         DbSet<Image> Images { get; }
+        DbSet<CategoryTag> CategoryTags { get; }
+        DbSet<CategoryTagLink> CategoryTagLinks { get; }
+        DbSet<PlaceMood> PlaceMoods { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
