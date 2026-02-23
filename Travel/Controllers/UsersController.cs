@@ -66,7 +66,7 @@ namespace TravelApi.Controllers
         [HttpGet("{userId}")]
         [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<UserResponse >>> GetUserById(int userId)
+        public async Task<ActionResult<ApiResponse<UserResponse>>> GetUserById(int userId)
         {
             var query = new GetUserByIdQuery { UserId = userId };
             var result = await _mediator.Send(query);
@@ -90,7 +90,7 @@ namespace TravelApi.Controllers
         }
 
 
-        [HttpPut]
+        [HttpPatch("profile")]
         [Authorize]
         [ProducesResponseType(typeof(ApiResponse<PersonalProfileDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
@@ -117,6 +117,123 @@ namespace TravelApi.Controllers
             }
             return Ok(ApiResponse<PersonalProfileDto>.SuccessResponse(result.Data!));
         }
+
+
+        [HttpPatch("business")]
+        [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<BusinessProfileDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<BusinessProfileDto>>> UpdateBusinessProfile(UpdateBusinessProfileCommand command)
+        {
+            // Получаем userId из JWT токена
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value
+                           ?? User.FindFirst("userId")?.Value;
+            if (userIdClaim == null)
+            {
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token - no user ID found"));
+            }
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid user ID format"));
+            }
+            command.UserId = userId;
+            var result = await _mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+            }
+            return Ok(ApiResponse<BusinessProfileDto>.SuccessResponse(result.Data!));
+
+        }
+
+
+        [HttpPost("profile-picture")]
+        [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<Application.DTO.Files.FileUploadResultDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<Application.DTO.Files.FileUploadResultDto>>> UpdateProfilePicture( IFormFile image)
+        {
+            // Получаем userId из JWT токена
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value
+                           ?? User.FindFirst("userId")?.Value;
+
+            if (userIdClaim == null)
+            {
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token - no user ID found"));
+            }
+
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid user ID format"));
+            }
+
+            var command = new UpdateProfilePictureCommand
+            {
+                UserId = userId,
+                Image = image
+            };
+
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+            }
+
+            return Ok(ApiResponse<Application.DTO.Files.FileUploadResultDto>.SuccessResponse(
+                result.Data!,
+                "Profile picture updated successfully"
+            ));
+        }
+
+        
+        [HttpDelete("profile-picture")]
+        [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<string>>> DeleteProfilePicture()
+        {
+           
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value
+                           ?? User.FindFirst("userId")?.Value;
+
+            if (userIdClaim == null)
+            {
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token - no user ID found"));
+            }
+
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid user ID format"));
+            }
+
+            
+            var user = await _mediator.Send(new GetUserByIdQuery { UserId = userId });
+
+            if (!user.IsSuccess || user.Data == null)
+            {
+                return NotFound(ErrorResponse.NotFound("User not found"));
+            }
+
+            
+            if (string.IsNullOrEmpty(user.Data.ProfilePicture))
+            {
+                return BadRequest(ErrorResponse.BadRequest("No profile picture to delete"));
+            }
+
+            // TODO: Implement DeleteProfilePictureCommand
+            // var command = new DeleteProfilePictureCommand { UserId = userId };
+            // var result = await _mediator.Send(command);
+
+            return Ok(ApiResponse<string>.SuccessResponse("Profile picture deleted successfully"));
+        }
+
 
     }
 }

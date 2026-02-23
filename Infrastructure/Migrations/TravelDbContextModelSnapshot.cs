@@ -22,6 +22,50 @@ namespace Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Domain.Entities.CategoryTag", b =>
+                {
+                    b.Property<int>("CategoryTagId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryTagId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("CategoryTagId");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_category_tag_name");
+
+                    b.ToTable("category_tag", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.CategoryTagLink", b =>
+                {
+                    b.Property<int>("PlaceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CategoryTagId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PlaceId", "CategoryTagId");
+
+                    b.HasIndex("CategoryTagId");
+
+                    b.ToTable("category_tag_link", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
                     b.Property<int>("CommentId")
@@ -54,6 +98,113 @@ namespace Infrastructure.Migrations
                     b.ToTable("comment", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Image", b =>
+                {
+                    b.Property<int>("ImageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ImageId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("Height")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCover")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MimeType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ThumbnailUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("UploadedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Width")
+                        .HasColumnType("int");
+
+                    b.HasKey("ImageId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_images_created");
+
+                    b.HasIndex("UploadedBy");
+
+                    b.HasIndex("EntityType", "EntityId")
+                        .HasDatabaseName("ix_images_entity");
+
+                    b.HasIndex("EntityType", "EntityId", "IsCover")
+                        .HasDatabaseName("ix_images_cover");
+
+                    b.HasIndex("EntityType", "EntityId", "SortOrder")
+                        .HasDatabaseName("ix_images_entity_sort");
+
+                    b.ToTable("images", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Like", b =>
+                {
+                    b.Property<int>("LikeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LikeId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("LikeId");
+
+                    b.HasIndex("PostId")
+                        .HasDatabaseName("ix_like_post");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_like_user");
+
+                    b.HasIndex("UserId", "PostId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_like_user_post_unique");
+
+                    b.ToTable("like", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Place", b =>
                 {
                     b.Property<int>("PlaceId")
@@ -62,14 +213,33 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PlaceId"));
 
+                    b.Property<string>("AdditionalInfo")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Address")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<decimal>("AverageRating")
+                        .HasColumnType("decimal(3,2)");
+
+                    b.Property<int?>("BusinessOwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Food");
 
                     b.Property<string>("City")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ClaimedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CountryCode")
                         .IsRequired()
@@ -85,16 +255,58 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsClaimed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal?>("Latitude")
+                        .HasColumnType("decimal(10,8)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasColumnType("decimal(11,8)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("PlaceType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Restaurant");
+
+                    b.Property<int>("ReviewsCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("SavesCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ViewsCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.HasKey("PlaceId");
+
+                    b.HasIndex("BusinessOwnerId");
+
+                    b.HasIndex("Category")
+                        .HasDatabaseName("ix_place_category");
 
                     b.HasIndex("CreatedBy");
 
@@ -104,7 +316,30 @@ namespace Infrastructure.Migrations
                     b.HasIndex("CountryCode", "City")
                         .HasDatabaseName("ix_place_location");
 
+                    b.HasIndex("IsActive", "AverageRating")
+                        .HasDatabaseName("ix_place_active_rating");
+
+                    b.HasIndex("Latitude", "Longitude")
+                        .HasDatabaseName("ix_place_coordinates");
+
                     b.ToTable("place", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.PlaceMood", b =>
+                {
+                    b.Property<int>("PlaceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Mood")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("PlaceId", "Mood");
+
+                    b.HasIndex("Mood")
+                        .HasDatabaseName("ix_place_mood_type");
+
+                    b.ToTable("place_mood", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Post", b =>
@@ -121,10 +356,6 @@ namespace Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("LikesCount")
                         .HasColumnType("int");
@@ -282,6 +513,10 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("BannerImage")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("Bio")
                         .HasColumnType("nvarchar(max)");
 
@@ -305,8 +540,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Country")
-                        .HasMaxLength(2)
-                        .HasColumnType("nvarchar(2)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -339,6 +574,13 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("User");
+
                     b.Property<string>("TravelInterest")
                         .HasColumnType("nvarchar(max)");
 
@@ -364,6 +606,25 @@ namespace Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.CategoryTagLink", b =>
+                {
+                    b.HasOne("Domain.Entities.CategoryTag", "CategoryTag")
+                        .WithMany("CategoryTagLinks")
+                        .HasForeignKey("CategoryTagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Place", "Place")
+                        .WithMany("CategoryTagLinks")
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CategoryTag");
+
+                    b.Navigation("Place");
+                });
+
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
                     b.HasOne("Domain.Entities.Post", "Post")
@@ -383,14 +644,61 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Image", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "Uploader")
+                        .WithMany()
+                        .HasForeignKey("UploadedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Uploader");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Like", b =>
+                {
+                    b.HasOne("Domain.Entities.Post", "Post")
+                        .WithMany("Likes")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("Likes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.Place", b =>
                 {
+                    b.HasOne("Domain.Entities.User", "BusinessOwner")
+                        .WithMany()
+                        .HasForeignKey("BusinessOwnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Domain.Entities.User", "Creator")
                         .WithMany("PlacesCreated")
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.Navigation("BusinessOwner");
+
                     b.Navigation("Creator");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PlaceMood", b =>
+                {
+                    b.HasOne("Domain.Entities.Place", "Place")
+                        .WithMany("Moods")
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Place");
                 });
 
             modelBuilder.Entity("Domain.Entities.Post", b =>
@@ -452,8 +760,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("Trip");
                 });
 
+            modelBuilder.Entity("Domain.Entities.CategoryTag", b =>
+                {
+                    b.Navigation("CategoryTagLinks");
+                });
+
             modelBuilder.Entity("Domain.Entities.Place", b =>
                 {
+                    b.Navigation("CategoryTagLinks");
+
+                    b.Navigation("Moods");
+
                     b.Navigation("Posts");
 
                     b.Navigation("TripPlaces");
@@ -462,6 +779,8 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Likes");
                 });
 
             modelBuilder.Entity("Domain.Entities.Trip", b =>
@@ -471,6 +790,8 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
+                    b.Navigation("Likes");
+
                     b.Navigation("PlacesCreated");
 
                     b.Navigation("Posts");

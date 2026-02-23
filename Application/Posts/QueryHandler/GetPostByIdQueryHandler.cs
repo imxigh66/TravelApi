@@ -2,7 +2,9 @@
 using Application.Common.Models;
 using Application.DTO.Places;
 using Application.DTO.Posts;
+using Application.DTO.Users;
 using Application.Posts.Queries;
+using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -22,16 +24,27 @@ namespace Application.Posts.QueryHandler
         }
         public async Task<OperationResult<PostDto>> Handle(GetPostByIdQuery request, CancellationToken cancellationToken)
         {
+           
             var post = await _context.Posts
                     .Where(p => p.PostId == request.PostId)
+                    .Include(p => p.User)
                     .Select(p => new PostDto
                     {
                         PostId = p.PostId,
                         UserId = p.UserId,
+                        Username = p.User.Username,
+                        UserProfilePicture = p.User.ProfilePicture,
                         PlaceId = p.PlaceId,
-                        Content = p.Content,
                         Title = p.Title,
-                        ImageUrl = p.ImageUrl,
+                        Content = p.Content,
+                        ImageUrls = _context.Images
+                .Where(i => i.EntityType == ImageEntityType.Post
+                         && i.EntityId == p.PostId
+                         && i.IsActive)
+                .OrderBy(i => i.SortOrder)
+                .Select(i => i.ImageUrl)
+                .ToList(),
+                        LikesCount = p.LikesCount,
                         CreatedAt = p.CreatedAt,
                         UpdatedAt = p.UpdatedAt
                     })

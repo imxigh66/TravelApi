@@ -18,7 +18,7 @@ namespace Domain.Entities
         public string? City { get; set; } = null!;
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
-
+        public string? BannerImage { get; set; }
 
         public bool EmailConfirmed { get; set; } = false;
         public string? EmailConfirmationToken { get; set; }
@@ -39,8 +39,11 @@ namespace Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
+        public UserRole Role { get; set; } = UserRole.User;
+
         // NAV
         public ICollection<Post> Posts { get; set; } = new List<Post>();
+        public ICollection<Like> Likes { get; set; } = new List<Like>();
         public ICollection<Trip> Trips { get; set; } = new List<Trip>();           // как владелец
         public ICollection<Place> PlacesCreated { get; set; } = new List<Place>();  // created_by
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

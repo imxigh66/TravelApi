@@ -10,11 +10,11 @@ namespace Application.DTO.Users
     public class UserDto
     {
         public int UserId { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string? Country { get; set; } = string.Empty;
-        public string? City { get; set; } = string.Empty;
+        public string? Username { get; set; }
+        public string? Email { get; set; }
+        public string? Name { get; set; }
+        public string? Country { get; set; }
+        public string? City { get; set; }
 
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
