@@ -7,6 +7,7 @@ using Application.Places.Queries;
 using Application.Posts.Queries;
 using Domain.Enum;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -279,6 +280,16 @@ namespace TravelApi.Controllers
 
             var result = await _mediator.Send(query);
             return Ok(result);
+        }
+
+
+
+        [HttpGet("{id}/nearby")]
+        public async Task<IActionResult> GetNearby(int id)
+        {
+            var result = await _mediator.Send(new GetNearbyQuery { PlaceId = id });
+            if (!result.IsSuccess) return NotFound(result.Data);
+            return Ok(result.Data);
         }
     }
 
