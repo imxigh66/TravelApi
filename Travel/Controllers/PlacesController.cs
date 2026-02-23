@@ -262,6 +262,24 @@ namespace TravelApi.Controllers
 
             return Ok(ApiResponse<PlaceDto>.SuccessResponse(result.Data!, "Place updated successfully"));
         }
+
+
+        [HttpGet("{id}/posts")]
+        public async Task<IActionResult> GetPostsByPlace(
+    int id,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            var query = new GetPostsByPlaceQuery
+            {
+                PlaceId = id,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
     }
 
 }
