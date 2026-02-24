@@ -54,6 +54,7 @@ namespace Domain.Entities
         public ICollection<Image> Images { get; set; } = new List<Image>();
         public ICollection<CategoryTagLink> CategoryTagLinks { get; set; } = new List<CategoryTagLink>();
         public ICollection<PlaceMood> Moods { get; set; } = new List<PlaceMood>();
+        public ICollection<SavedPlace> SavedByUsers { get; set; } = new List<SavedPlace>();
     }
 }
 
