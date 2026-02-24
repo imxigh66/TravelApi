@@ -4,10 +4,14 @@ using Application.DTO.Places;
 using Application.DTO.Posts;
 using Application.Places.Commands;
 using Application.Places.Queries;
+using Application.Posts.Commands;
 using Application.Posts.Queries;
+using Domain.Entities;
 using Domain.Enum;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -290,6 +294,75 @@ namespace TravelApi.Controllers
             var result = await _mediator.Send(new GetNearbyQuery { PlaceId = id });
             if (!result.IsSuccess) return NotFound(result.Data);
             return Ok(result.Data);
+        }
+
+        [Authorize]
+        [HttpPost("{id}/save")]
+        public async Task<IActionResult> Save(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                            ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                            ?? User.FindFirst("sub")?.Value;
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new SavePlaceCommand
+            {
+                UserId = userId,
+                PlaceId = id
+            };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return Ok(ApiResponse<object>.SuccessResponse("Place saved successfully"));
+        }
+
+
+        [HttpDelete("{id}/unsave")]
+        public async Task<IActionResult> Unsave(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new UnsavePlaceCommand
+            {
+                UserId = userId,
+                PlaceId = id
+            };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return NotFound(ErrorResponse.NotFound(result.Error!));
+
+            return NoContent(); 
+        }
+
+       
+
+
+        [Authorize]
+        [HttpGet("{id}/is-saved")]
+        public async Task<IActionResult> IsSaved(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized();
+
+            var query = new IsSavedQuery
+            {
+                UserId = userId,
+                PlaceId = id
+            };
+            var result = await _mediator.Send(query);
+
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "IsSaved retrieved successfully"));
         }
     }
 

@@ -11,6 +11,7 @@ namespace Application.Common.Interfaces
     public interface IApplicationDbContext
     {
         DbSet<User> Users { get; }
+        DbSet<SavedPlace> SavedPlaces { get; }
         DbSet<Place> Places { get; }
         DbSet<Trip> Trips { get; }
         DbSet<TripPlace> TripPlaces { get; }
