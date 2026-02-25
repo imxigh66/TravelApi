@@ -18,6 +18,7 @@ namespace Application.Common.Interfaces
         DbSet<Comment> Comments { get; }
         DbSet<RefreshToken> RefreshTokens { get; }
 
+        DbSet<UserFollow> UserFollows { get;  }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

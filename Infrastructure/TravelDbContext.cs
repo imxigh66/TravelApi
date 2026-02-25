@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,6 +21,7 @@ namespace Infrastructure
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<Comment> Comments => Set<Comment>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+        public DbSet<UserFollow> UserFollows => Set<UserFollow>();
 
         protected override void OnModelCreating(ModelBuilder b)
         {
@@ -64,6 +66,31 @@ namespace Infrastructure
 
                 e.HasIndex(x => x.Username).IsUnique();
                 e.HasIndex(x => x.Email).IsUnique();
+            });
+
+            b.Entity<UserFollow>(e =>
+            {
+                e.ToTable("user_follows");
+
+                // Составной ключ
+                e.HasKey(x => new { x.FollowerId, x.FollowingId });
+
+                // Follower → Following (кто подписался)
+                e.HasOne(x => x.Follower)
+                 .WithMany(u => u.Following)
+                 .HasForeignKey(x => x.FollowerId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // Following → Followers (на кого подписались)
+                e.HasOne(x => x.Following)
+                 .WithMany(u => u.Followers)
+                 .HasForeignKey(x => x.FollowingId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasIndex(x => x.FollowerId);
+                e.HasIndex(x => x.FollowingId);
+
+                e.Property(x => x.FollowedAt).IsRequired();
             });
 
             // PLACE

@@ -44,5 +44,8 @@ namespace Domain.Entities
         public ICollection<Trip> Trips { get; set; } = new List<Trip>();           // как владелец
         public ICollection<Place> PlacesCreated { get; set; } = new List<Place>();  // created_by
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+        public ICollection<UserFollow> Followers { get; set; } = new List<UserFollow>();
+        public ICollection<UserFollow> Following { get; set; } = new List<UserFollow>();
     }
 }
