@@ -14,7 +14,8 @@ namespace Application.DTO.Users
         public TravelInterest? TravelInterest { get; set; }
         public TravelStyle? TravelStyle { get; set; }
 
-
+        public int FollowersCount { get; set; }
+        public int FollowingCount { get; set; }
         public BusinessType? BusinessType { get; set; }
         public string? BusinessAddress { get; set; } = null!;
         public string? BusinessWebsite { get; set; } = null!;
