@@ -24,6 +24,7 @@ namespace Application.Common.Interfaces
         DbSet<CategoryTagLink> CategoryTagLinks { get; }
         DbSet<PlaceMood> PlaceMoods { get; }
 
+        DbSet<UserFollow> UserFollows { get;  }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }
