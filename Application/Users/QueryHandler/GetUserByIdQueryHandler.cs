@@ -29,6 +29,12 @@ namespace Application.Users.QueryHandler
                
             }
 
+            var followersCount = await _context.UserFollows
+    .CountAsync(f => f.FollowingId == request.UserId);
+
+            var followingCount = await _context.UserFollows
+                .CountAsync(f => f.FollowerId == request.UserId);
+
             var userDto = new UserResponse
             {
                 UserId = user.UserId,
@@ -46,6 +52,8 @@ namespace Application.Users.QueryHandler
                 BusinessWebsite = user.BusinessWebsite,
                 BusinessPhone = user.BusinessPhone,
                 Bio = user.Bio,
+                FollowersCount = followersCount,  
+                FollowingCount = followingCount,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             };

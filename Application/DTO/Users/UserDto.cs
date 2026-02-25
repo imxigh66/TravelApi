@@ -20,7 +20,6 @@ namespace Application.DTO.Users
         public string? ProfilePicture { get; set; }
         public AccountType AccountType { get; set; }
 
-
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
