@@ -199,5 +199,22 @@ namespace TravelApi.Controllers
                 return NotFound(ErrorResponse.NotFound("Post not found or you are not the owner"));
             return NoContent();
         }
+
+
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetUserPosts(
+    int userId,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            var result = await _mediator.Send(new GetUserPostsQuery
+            {
+                UserId = userId,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            });
+
+            return Ok(result);
+        }
     }
 }
