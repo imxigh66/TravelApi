@@ -29,6 +29,7 @@ namespace Infrastructure
         public DbSet<CategoryTag> CategoryTags => Set<CategoryTag>();
         public DbSet<CategoryTagLink> CategoryTagLinks => Set<CategoryTagLink>();
         public DbSet<PlaceMood> PlaceMoods => Set<PlaceMood>();
+        public DbSet<UserFollow> UserFollows => Set<UserFollow>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -77,6 +78,31 @@ namespace Infrastructure
 
                 e.HasIndex(x => x.Username).IsUnique();
                 e.HasIndex(x => x.Email).IsUnique();
+            });
+
+            b.Entity<UserFollow>(e =>
+            {
+                e.ToTable("user_follows");
+
+               
+                e.HasKey(x => new { x.FollowerId, x.FollowingId });
+
+               
+                e.HasOne(x => x.Follower)
+                 .WithMany(u => u.Following)
+                 .HasForeignKey(x => x.FollowerId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+               
+                e.HasOne(x => x.Following)
+                 .WithMany(u => u.Followers)
+                 .HasForeignKey(x => x.FollowingId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasIndex(x => x.FollowerId);
+                e.HasIndex(x => x.FollowingId);
+
+                e.Property(x => x.FollowedAt).IsRequired();
             });
             b.Entity<SavedPlace>(e =>
             {
