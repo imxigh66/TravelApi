@@ -216,5 +216,25 @@ namespace TravelApi.Controllers
 
             return Ok(result);
         }
+
+
+        [Authorize]
+        [HttpGet("feed")]
+        public async Task<IActionResult> GetFeed([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                          ?? User.FindFirst("sub")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var result = await _mediator.Send(new GetFeedQuery
+            {
+                CurrentUserId = userId,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            });
+            return Ok(result);
+        }
     }
 }
