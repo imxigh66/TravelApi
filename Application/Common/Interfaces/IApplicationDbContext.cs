@@ -11,6 +11,7 @@ namespace Application.Common.Interfaces
     public interface IApplicationDbContext
     {
         DbSet<User> Users { get; }
+        DbSet<SavedPlace> SavedPlaces { get; }
         DbSet<Place> Places { get; }
         DbSet<Trip> Trips { get; }
         DbSet<TripPlace> TripPlaces { get; }
@@ -23,6 +24,7 @@ namespace Application.Common.Interfaces
         DbSet<CategoryTagLink> CategoryTagLinks { get; }
         DbSet<PlaceMood> PlaceMoods { get; }
 
+        DbSet<UserFollow> UserFollows { get;  }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

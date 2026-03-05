@@ -9,6 +9,8 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using Application.Users.Command;
+using Application.DTO.Places;
+using Application.Places.Queries;
 
 namespace TravelApi.Controllers
 {
@@ -234,6 +236,28 @@ namespace TravelApi.Controllers
             return Ok(ApiResponse<string>.SuccessResponse("Profile picture deleted successfully"));
         }
 
+
+        [Authorize]
+        [HttpGet("saved")]
+        public async Task<ActionResult<PaginatedList<PlaceDto>>> GetSavedPlaces(
+   [FromQuery] int pageNumber = 1,
+   [FromQuery] int pageSize = 10)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                            ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var result = await _mediator.Send(new GetSavedPlacesQuery
+            {
+                UserId = userId,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            });
+
+            return Ok(result);
+        }
 
     }
 }

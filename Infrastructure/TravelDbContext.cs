@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ namespace Infrastructure
         public TravelDbContext(DbContextOptions<TravelDbContext> options) : base(options) { }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<SavedPlace> SavedPlaces => Set<SavedPlace>();
         public DbSet<Place> Places => Set<Place>();
         public DbSet<Trip> Trips => Set<Trip>();
         public DbSet<TripPlace> TripPlaces => Set<TripPlace>();
@@ -27,6 +29,7 @@ namespace Infrastructure
         public DbSet<CategoryTag> CategoryTags => Set<CategoryTag>();
         public DbSet<CategoryTagLink> CategoryTagLinks => Set<CategoryTagLink>();
         public DbSet<PlaceMood> PlaceMoods => Set<PlaceMood>();
+        public DbSet<UserFollow> UserFollows => Set<UserFollow>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -77,7 +80,48 @@ namespace Infrastructure
                 e.HasIndex(x => x.Email).IsUnique();
             });
 
-            // PLACE
+            b.Entity<UserFollow>(e =>
+            {
+                e.ToTable("user_follows");
+
+               
+                e.HasKey(x => new { x.FollowerId, x.FollowingId });
+
+               
+                e.HasOne(x => x.Follower)
+                 .WithMany(u => u.Following)
+                 .HasForeignKey(x => x.FollowerId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+               
+                e.HasOne(x => x.Following)
+                 .WithMany(u => u.Followers)
+                 .HasForeignKey(x => x.FollowingId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasIndex(x => x.FollowerId);
+                e.HasIndex(x => x.FollowingId);
+
+                e.Property(x => x.FollowedAt).IsRequired();
+            });
+            b.Entity<SavedPlace>(e =>
+            {
+                e.ToTable("saved_place");
+                e.HasKey(x => new { x.UserId, x.PlaceId });
+
+                e.HasIndex(x => x.UserId).HasDatabaseName("ix_saved_place_user");
+                e.HasIndex(x => x.PlaceId).HasDatabaseName("ix_saved_place_place");
+
+                e.HasOne(x => x.User)
+                 .WithMany(u => u.SavedPlaces)
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.Place)
+                 .WithMany(p => p.SavedByUsers)
+                 .HasForeignKey(x => x.PlaceId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
             // PLACE
             b.Entity<Place>(e =>
             {
