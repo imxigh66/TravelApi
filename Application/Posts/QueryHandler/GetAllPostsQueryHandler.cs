@@ -145,6 +145,7 @@ namespace Application.Posts.QueryHandler
                 Content = p.Content,
                 ImageUrls = imagesByPost.GetValueOrDefault(p.PostId) ?? new List<string>(),
                 LikesCount = p.LikesCount,
+                CommentsCount = _context.Comments.Count(c => c.PostId == p.PostId),
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             }).ToList();

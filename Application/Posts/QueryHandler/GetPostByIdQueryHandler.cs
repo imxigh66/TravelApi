@@ -45,6 +45,7 @@ namespace Application.Posts.QueryHandler
                 .Select(i => i.ImageUrl)
                 .ToList(),
                         LikesCount = p.LikesCount,
+                        CommentsCount = _context.Comments.Count(c => c.PostId == p.PostId),
                         CreatedAt = p.CreatedAt,
                         UpdatedAt = p.UpdatedAt
                     })

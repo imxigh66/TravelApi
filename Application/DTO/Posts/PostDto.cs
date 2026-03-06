@@ -20,6 +20,7 @@ namespace Application.DTO.Posts
         public List<string> ImageUrls { get; set; } = new List<string>();
 
         public int LikesCount { get; set; }
+        public int CommentsCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
