@@ -48,6 +48,11 @@ namespace Application.Posts.QueryHandler
 
                 var userPostIds = userPosts.Select(p => p.PostId).ToList();
 
+                var commentCounts = await _context.Comments
+                    .Where(c => userPostIds.Contains(c.PostId))
+                    .GroupBy(c => c.PostId)
+                    .ToDictionaryAsync(g => g.Key, g => g.Count(), cancellationToken);
+
                 var userImages = await _context.Images
                     .AsNoTracking()
                     .Where(i => i.EntityType == ImageEntityType.Post
@@ -70,6 +75,7 @@ namespace Application.Posts.QueryHandler
                     Content = p.Content,
                     ImageUrls = userImages.GetValueOrDefault(p.PostId) ?? new List<string>(),
                     LikesCount = p.LikesCount,
+                    CommentsCount = commentCounts.GetValueOrDefault(p.PostId, 0),
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt
                 }).ToList();
