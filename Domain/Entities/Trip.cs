@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,12 +17,14 @@ namespace Domain.Entities
         public string CountryCode { get; set; } = null!;
         public string City { get; set; } = null!;
         public bool IsPublic { get; set; } = true;
+        public TripStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
         // NAV
         public User Owner { get; set; } = null!;
         public ICollection<TripPlace> TripPlaces { get; set; } = new List<TripPlace>();
+        public ICollection<TripNote> Notes { get; set; } = new List<TripNote>();
         // удобный доступ ко множеству мест через TripPlaces можно собрать проекцией
     }
 

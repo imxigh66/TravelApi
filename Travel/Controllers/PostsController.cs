@@ -42,7 +42,7 @@ namespace TravelApi.Controllers
                 Title = dto.Title,
                 Content = dto.Content,
                 PlaceId = dto.PlaceId,
-                Images = dto.Images  // 👈 Массив файлов
+                Images = dto.Images  
             };
 
             var result = await _mediator.Send(command);

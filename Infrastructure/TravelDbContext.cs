@@ -30,6 +30,8 @@ namespace Infrastructure
         public DbSet<CategoryTagLink> CategoryTagLinks => Set<CategoryTagLink>();
         public DbSet<PlaceMood> PlaceMoods => Set<PlaceMood>();
         public DbSet<UserFollow> UserFollows => Set<UserFollow>();
+
+        public DbSet<TripNote> TripNotes => Set<TripNote>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -50,7 +52,7 @@ namespace Infrastructure
                 e.Property(x => x.BannerImage).HasMaxLength(500);
                 // enums → string
                 e.Property(x => x.TravelInterest)
-                    .HasConversion<string>(); 
+                    .HasConversion<string>();
 
                 e.Property(x => x.TravelStyle)
                     .HasConversion<string>();
@@ -84,16 +86,16 @@ namespace Infrastructure
             {
                 e.ToTable("user_follows");
 
-               
+
                 e.HasKey(x => new { x.FollowerId, x.FollowingId });
 
-               
+
                 e.HasOne(x => x.Follower)
                  .WithMany(u => u.Following)
                  .HasForeignKey(x => x.FollowerId)
                  .OnDelete(DeleteBehavior.Restrict);
 
-               
+
                 e.HasOne(x => x.Following)
                  .WithMany(u => u.Followers)
                  .HasForeignKey(x => x.FollowingId)
@@ -152,7 +154,7 @@ namespace Infrastructure
                     .IsRequired()
                     .HasDefaultValue(PlaceType.Restaurant);
 
-             
+
 
                 // Рейтинг
                 e.Property(x => x.AverageRating).HasColumnType("decimal(3,2)"); // 0.00 - 5.00
@@ -229,7 +231,7 @@ namespace Infrastructure
             {
                 e.ToTable("place_mood");
 
-        
+
                 e.HasKey(x => new { x.PlaceId, x.Mood });
 
                 e.Property(x => x.Mood)
@@ -320,7 +322,7 @@ namespace Infrastructure
                  .OnDelete(DeleteBehavior.Cascade);
 
                 e.HasOne(x => x.User)
-                 .WithMany() 
+                 .WithMany()
                  .HasForeignKey(x => x.UserId)
                  .OnDelete(DeleteBehavior.NoAction);
             });
@@ -409,6 +411,19 @@ namespace Infrastructure
                     .WithMany()
                     .HasForeignKey(x => x.UploadedBy)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+
+            b.Entity<TripNote>(e =>
+            {
+                e.ToTable("trip_note");
+                e.HasKey(x => x.TripNoteId);
+                e.Property(x => x.Content).HasColumnType("nvarchar(max)").IsRequired();
+                e.HasIndex(x => new { x.TripId, x.CreatedAt }).HasDatabaseName("ix_trip_note_trip_created");
+                e.HasOne(x => x.Trip)
+                 .WithMany(t => t.Notes)
+                 .HasForeignKey(x => x.TripId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
