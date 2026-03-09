@@ -114,5 +114,79 @@ namespace TravelApi.Controllers
 
             return NoContent();
         }
+
+
+        [Authorize]
+        [HttpPost("{tripId}/places")]
+        public async Task<ActionResult<ApiResponse<TripPlaceDto>>> AddPlace(int tripId, [FromBody] AddPlaceRequest dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                          ?? User.FindFirst("sub")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new AddPlaceToTripCommand
+            {
+                TripId = tripId,
+                UserId = userId,
+                PlaceId = dto.PlaceId,
+                Notes = dto.Notes
+            };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return Ok(ApiResponse<TripPlaceDto>.SuccessResponse(result.Data!));
+        }
+
+        [Authorize]
+        [HttpDelete("{tripId}/places/{placeId}")]
+        public async Task<IActionResult> RemovePlace(int tripId, int placeId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                          ?? User.FindFirst("sub")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new RemovePlaceFromTripCommand
+            {
+                TripId = tripId,
+                PlaceId = placeId,
+                UserId = userId
+            };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPut("{tripId}/places/reorder")]
+        public async Task<IActionResult> ReorderPlaces(int tripId, [FromBody] List<TripPlaceOrderItem> places)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                          ?? User.FindFirst("sub")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new ReorderTripPlacesCommand
+            {
+                TripId = tripId,
+                UserId = userId,
+                Places = places
+            };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return NoContent();
+        }
     }
 }
