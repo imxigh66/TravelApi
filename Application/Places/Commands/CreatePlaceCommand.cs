@@ -42,5 +42,6 @@ namespace Application.Places.Commands
 
         // Кто создает
         public int? CreatedBy { get; set; }
+        public string? CreatedByRole { get; set; }
     }
 }

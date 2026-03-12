@@ -40,6 +40,12 @@ namespace Domain.Entities
         public bool IsClaimed { get; set; }
         public DateTime? ClaimedAt { get; set; }
 
+        // ── Модерация ──
+        public PlaceStatus Status { get; set; } = PlaceStatus.Pending;
+        public string? RejectionReason { get; set; }
+        public int? ReviewedBy { get; set; }      // userId модератора
+        public DateTime? ReviewedAt { get; set; }
+
         // Метаданные
         public int? CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }

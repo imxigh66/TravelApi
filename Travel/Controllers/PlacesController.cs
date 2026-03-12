@@ -29,82 +29,49 @@ namespace TravelApi.Controllers
 
 
         [HttpPost]
+        [Authorize]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(ApiResponse<PlaceDto>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<ApiResponse<PlaceDto>>> CreatePlace([FromForm] CreatePlaceRequest request)
         {
-            // Получаем userId из токена
-            //var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
-            //               ?? User.FindFirst(JwtRegisteredClaimNames.Sub)
-            //               ?? User.FindFirst("sub");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
-            //if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            //{
-            //    return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
-            //}
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
 
-            // Парсим Category из строки в enum
-            if (!Enum.TryParse<PlaceCategory>(request.Category, true, out var category))
+            var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
+
+            PlaceCategory? category = null;
+            if (!string.IsNullOrEmpty(request.Category))
             {
-                return BadRequest(ErrorResponse.BadRequest("Invalid category"));
+                if (!Enum.TryParse<PlaceCategory>(request.Category, true, out var c))
+                    return BadRequest(ErrorResponse.BadRequest($"Invalid category: '{request.Category}'"));
+                category = c;
             }
 
-            // Парсим PlaceType из строки в enum
-            if (!Enum.TryParse<PlaceType>(request.PlaceType, true, out var placeType))
+            PlaceType? placeType = null;
+            if (!string.IsNullOrEmpty(request.PlaceType))
             {
-                return BadRequest(ErrorResponse.BadRequest("Invalid place type"));
+                if (!Enum.TryParse<PlaceType>(request.PlaceType, true, out var pt))
+                    return BadRequest(ErrorResponse.BadRequest($"Invalid placeType: '{request.PlaceType}'"));
+                placeType = pt;
             }
 
-            var moods = new List<MoodType>();
-
+            List<MoodType>? moods = null;
             if (request.Moods != null)
             {
+                moods = new List<MoodType>();
                 foreach (var moodStr in request.Moods)
                 {
-                    // Разбиваем на случай если Swagger прислал "16,10" одной строкой
-                    var parts = moodStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-                    foreach (var part in parts)
+                    foreach (var part in moodStr.Split(',', StringSplitOptions.RemoveEmptyEntries))
                     {
-                        var trimmed = part.Trim();
-
-                        // Пробуем парсить как строку ("WithCompany")
-                        if (Enum.TryParse<MoodType>(trimmed, ignoreCase: true, out var mood)
-                            && Enum.IsDefined(typeof(MoodType), mood)) // ← не допускает числовые комбинации
-                        {
+                        if (Enum.TryParse<MoodType>(part.Trim(), true, out var mood))
                             moods.Add(mood);
-                        }
                     }
                 }
-
-                moods = moods.Distinct().ToList();
             }
-            //PlaceAdditionalInfo? additionalInfo = null;
-
-            //if (!string.IsNullOrEmpty(request.AdditionalInfoJson))
-            //{
-            //    try
-            //    {
-            //        additionalInfo = category switch
-            //        {
-            //            PlaceCategory.Food => JsonSerializer.Deserialize<FoodPlaceInfo>(request.AdditionalInfoJson),
-            //            PlaceCategory.Accommodation => JsonSerializer.Deserialize<AccommodationPlaceInfo>(request.AdditionalInfoJson),
-            //            PlaceCategory.Culture => JsonSerializer.Deserialize<CulturePlaceInfo>(request.AdditionalInfoJson),
-            //            PlaceCategory.Nature => JsonSerializer.Deserialize<NaturePlaceInfo>(request.AdditionalInfoJson),
-            //            PlaceCategory.Entertainment => JsonSerializer.Deserialize<EntertainmentPlaceInfo>(request.AdditionalInfoJson),
-            //            PlaceCategory.Shopping => JsonSerializer.Deserialize<ShoppingPlaceInfo>(request.AdditionalInfoJson),
-            //            PlaceCategory.Transport => JsonSerializer.Deserialize<TransportPlaceInfo>(request.AdditionalInfoJson),
-            //            PlaceCategory.Services => JsonSerializer.Deserialize<ServicePlaceInfo>(request.AdditionalInfoJson),
-            //            _ => null
-            //        };
-            //    }
-            //    catch (JsonException)
-            //    {
-            //        return BadRequest(ErrorResponse.BadRequest("Invalid AdditionalInfo JSON format"));
-            //    }
-            //}
 
             var command = new CreatePlaceCommand
             {
@@ -115,11 +82,13 @@ namespace TravelApi.Controllers
                 Address = request.Address,
                 Latitude = request.Latitude,
                 Longitude = request.Longitude,
-                Category = category,
-                PlaceType = placeType,
+                Category = category ?? PlaceCategory.Food,
+                PlaceType = placeType ?? PlaceType.Restaurant,
                 AdditionalInfoJson = request.AdditionalInfoJson,
                 Moods = moods,
-                Images = request.Images?.ToList()
+                Images = request.Images?.ToList(),
+                CreatedBy = userId,
+                CreatedByRole = role,
             };
 
             var result = await _mediator.Send(command);
@@ -130,8 +99,75 @@ namespace TravelApi.Controllers
             return CreatedAtAction(
                 nameof(GetPlaceById),
                 new { id = result.Data!.PlaceId },
-                ApiResponse<PlaceDto>.SuccessResponse(result.Data, "Place created successfully"));
+                ApiResponse<PlaceDto>.SuccessResponse(result.Data,
+                    role == "Moderator"
+                        ? "Place created and published successfully"
+                        : "Place submitted for moderation. It will be visible after review."));
         }
+
+
+
+        [HttpGet("pending")]
+        [Authorize(Roles = "Moderator")]
+        [ProducesResponseType(typeof(PaginatedList<PlaceDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<PaginatedList<PlaceDto>>> GetPendingPlaces(
+           [FromQuery] int pageNumber = 1,
+           [FromQuery] int pageSize = 20)
+        {
+            var result = await _mediator.Send(new GetPendingPlacesQuery
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            });
+            return Ok(result);
+        }
+
+        [HttpPost("{id}/approve")]
+        [Authorize(Roles = "Moderator")]
+        [ProducesResponseType(typeof(ApiResponse<PlaceDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<PlaceDto>>> ApprovePlace(int id)
+        {
+            var modId = GetCurrentUserId();
+
+            var result = await _mediator.Send(new ApproveOrRejectPlaceCommand
+            {
+                PlaceId = id,
+                Approve = true,
+                ModeratorId = modId
+            });
+
+            if (!result.IsSuccess)
+                return NotFound(ErrorResponse.NotFound(result.Error!));
+
+            return Ok(ApiResponse<PlaceDto>.SuccessResponse(result.Data!, "Place approved successfully"));
+        }
+
+
+        [HttpPost("{id}/reject")]
+        [Authorize(Roles = "Moderator")]
+        [ProducesResponseType(typeof(ApiResponse<PlaceDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<PlaceDto>>> RejectPlace(
+           int id,
+           [FromBody] RejectPlaceRequest body)
+        {
+            var modId = GetCurrentUserId();
+
+            var result = await _mediator.Send(new ApproveOrRejectPlaceCommand
+            {
+                PlaceId = id,
+                Approve = false,
+                RejectionReason = body.Reason,
+                ModeratorId = modId
+            });
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return Ok(ApiResponse<PlaceDto>.SuccessResponse(result.Data!, "Place rejected"));
+        }
+
         [HttpGet("{id:int}")]
         [ProducesResponseType(typeof(ApiResponse<PlaceDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -202,27 +238,26 @@ namespace TravelApi.Controllers
 
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Moderator")]
         [Consumes("multipart/form-data")]
-        [ProducesResponseType(typeof(ApiResponse<PlaceDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<PlaceDto>>> UpdatePlace(
-    int id,
-    [FromForm] UpdatePlaceRequest request)
+            int id,
+            [FromForm] UpdatePlaceRequest request)
         {
             PlaceCategory? category = null;
             if (!string.IsNullOrEmpty(request.Category))
             {
-                if (!Enum.TryParse<PlaceCategory>(request.Category, true, out var parsedCategory))
+                if (!Enum.TryParse<PlaceCategory>(request.Category, true, out var c))
                     return BadRequest(ErrorResponse.BadRequest("Invalid category"));
-                category = parsedCategory;
+                category = c;
             }
 
             PlaceType? placeType = null;
             if (!string.IsNullOrEmpty(request.PlaceType))
             {
-                if (!Enum.TryParse<PlaceType>(request.PlaceType, true, out var parsedType))
+                if (!Enum.TryParse<PlaceType>(request.PlaceType, true, out var pt))
                     return BadRequest(ErrorResponse.BadRequest("Invalid place type"));
-                placeType = parsedType;
+                placeType = pt;
             }
 
             List<MoodType>? moods = null;
@@ -231,11 +266,9 @@ namespace TravelApi.Controllers
                 moods = new List<MoodType>();
                 foreach (var moodStr in request.Moods)
                 {
-                    var parts = moodStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var part in parts)
+                    foreach (var part in moodStr.Split(',', StringSplitOptions.RemoveEmptyEntries))
                     {
-                        if (Enum.TryParse<MoodType>(part.Trim(), true, out var mood)
-                            && Enum.IsDefined(typeof(MoodType), mood))
+                        if (Enum.TryParse<MoodType>(part.Trim(), true, out var mood))
                             moods.Add(mood);
                     }
                 }
@@ -363,6 +396,14 @@ namespace TravelApi.Controllers
             var result = await _mediator.Send(query);
 
             return Ok(ApiResponse<bool>.SuccessResponse(result, "IsSaved retrieved successfully"));
+        }
+
+
+        private int GetCurrentUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            return int.Parse(claim!);
         }
     }
 
