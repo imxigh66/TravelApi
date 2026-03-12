@@ -486,6 +486,9 @@ namespace Infrastructure.Migrations
                     b.Property<int>("OwnerId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -509,6 +512,39 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("ix_trip_public");
 
                     b.ToTable("trip", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.TripNote", b =>
+                {
+                    b.Property<int>("TripNoteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TripNoteId"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TripId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("TripNoteId");
+
+                    b.HasIndex("TripId", "CreatedAt")
+                        .HasDatabaseName("ix_trip_note_trip_created");
+
+                    b.ToTable("trip_note", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.TripPlace", b =>
@@ -638,6 +674,26 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.UserFollow", b =>
+                {
+                    b.Property<int>("FollowerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FollowingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FollowedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("FollowerId", "FollowingId");
+
+                    b.HasIndex("FollowerId");
+
+                    b.HasIndex("FollowingId");
+
+                    b.ToTable("user_follows", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.CategoryTagLink", b =>
@@ -794,6 +850,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("Domain.Entities.TripNote", b =>
+                {
+                    b.HasOne("Domain.Entities.Trip", "Trip")
+                        .WithMany("Notes")
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Trip");
+                });
+
             modelBuilder.Entity("Domain.Entities.TripPlace", b =>
                 {
                     b.HasOne("Domain.Entities.Place", "Place")
@@ -811,6 +878,25 @@ namespace Infrastructure.Migrations
                     b.Navigation("Place");
 
                     b.Navigation("Trip");
+                });
+
+            modelBuilder.Entity("Domain.Entities.UserFollow", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "Follower")
+                        .WithMany("Following")
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", "Following")
+                        .WithMany("Followers")
+                        .HasForeignKey("FollowingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Follower");
+
+                    b.Navigation("Following");
                 });
 
             modelBuilder.Entity("Domain.Entities.CategoryTag", b =>
@@ -840,11 +926,17 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Trip", b =>
                 {
+                    b.Navigation("Notes");
+
                     b.Navigation("TripPlaces");
                 });
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
+                    b.Navigation("Followers");
+
+                    b.Navigation("Following");
+
                     b.Navigation("Likes");
 
                     b.Navigation("PlacesCreated");

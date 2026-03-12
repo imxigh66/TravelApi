@@ -42,7 +42,7 @@ namespace TravelApi.Controllers
                 Title = dto.Title,
                 Content = dto.Content,
                 PlaceId = dto.PlaceId,
-                Images = dto.Images  // 👈 Массив файлов
+                Images = dto.Images  
             };
 
             var result = await _mediator.Send(command);
@@ -198,6 +198,43 @@ namespace TravelApi.Controllers
             if (!result)
                 return NotFound(ErrorResponse.NotFound("Post not found or you are not the owner"));
             return NoContent();
+        }
+
+
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetUserPosts(
+    int userId,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            var result = await _mediator.Send(new GetUserPostsQuery
+            {
+                UserId = userId,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            });
+
+            return Ok(result);
+        }
+
+
+        [Authorize]
+        [HttpGet("feed")]
+        public async Task<IActionResult> GetFeed([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                          ?? User.FindFirst("sub")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var result = await _mediator.Send(new GetFeedQuery
+            {
+                CurrentUserId = userId,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            });
+            return Ok(result);
         }
     }
 }
