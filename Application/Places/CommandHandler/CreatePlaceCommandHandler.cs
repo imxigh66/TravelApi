@@ -39,7 +39,7 @@ namespace Application.Places.CommandHandler
             CreatePlaceCommand request,
             CancellationToken cancellationToken)
         {
-            // 1. Проверяем дубликаты
+          
             var exists = await _context.Places
                 .AnyAsync(p => p.Name == request.Name
                             && p.City == request.City
@@ -58,7 +58,7 @@ namespace Application.Places.CommandHandler
                 try
                 {
                     JsonDocument.Parse(request.AdditionalInfoJson);
-                    _logger.LogInformation("✅ Valid JSON");
+                    _logger.LogInformation(" Valid JSON");
                 }
                 catch (JsonException)
                 {
@@ -66,7 +66,8 @@ namespace Application.Places.CommandHandler
                 }
             }
 
-            // 2. Создаем место
+            bool isModerator = request.CreatedByRole == "Moderator";
+
             var place = new Place
             {
                 Name = request.Name,
@@ -83,25 +84,28 @@ namespace Application.Places.CommandHandler
                 ReviewsCount = 0,
                 SavesCount = 0,
                 ViewsCount = 0,
-                //CreatedBy = request.CreatedBy,
+                CreatedBy = request.CreatedBy,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                IsActive = true
+                // ── Модерация ──
+                Status = isModerator ? PlaceStatus.Approved : PlaceStatus.Pending,
+                IsActive = isModerator, 
+                ReviewedBy = isModerator ? request.CreatedBy : null,
+                ReviewedAt = isModerator ? DateTime.UtcNow : null,
             };
 
             _context.Places.Add(place);
-            _logger.LogInformation($"🔄 Attempting to save place: {place.Name}");
+            _logger.LogInformation($" Creating place: {place.Name} (status: {place.Status})");
 
             try
             {
                 await _context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation($"✅ Place saved: {place.PlaceId}");
+                _logger.LogInformation($" Place saved: {place.PlaceId}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"❌ Failed to save place. InnerException: {ex.InnerException?.Message}");
+                _logger.LogError(ex, $" Failed to save place. InnerException: {ex.InnerException?.Message}");
 
-                // Возвращаем детальную ошибку
                 return OperationResult<PlaceDto>.Failure(
                     $"Database error: {ex.InnerException?.Message ?? ex.Message}");
             }
@@ -199,8 +203,10 @@ namespace Application.Places.CommandHandler
                 SavesCount = place.SavesCount,
                 ImageUrls = imageUrls,
                 CoverImageUrl = coverImageUrl,
-                //CreatedBy = place.CreatedBy,
-                CreatedAt = place.CreatedAt
+                CreatedBy = place.CreatedBy,
+                CreatedAt = place.CreatedAt,
+                Status = place.Status,
+                RejectionReason = place.RejectionReason,
             });
         }
     }
