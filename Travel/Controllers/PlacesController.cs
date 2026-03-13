@@ -193,7 +193,8 @@ namespace TravelApi.Controllers
      [FromQuery] string? mood = null,   // MoodType
      [FromQuery] string? city = null,
      [FromQuery] string? countryCode = null,
-     [FromQuery] string? sortBy = null)   // rating | popular | newest
+     [FromQuery] string? sortBy = null,
+     [FromQuery] string? search = null)   // rating | popular | newest
         {
             PlaceCategory? categoryEnum = null;
             if (!string.IsNullOrEmpty(category))
@@ -229,7 +230,8 @@ namespace TravelApi.Controllers
                 Mood = moodEnum,
                 City = city,
                 CountryCode = countryCode,
-                SortBy = sortBy
+                SortBy = sortBy,
+                Search = search
             };
 
             var result = await _mediator.Send(query);

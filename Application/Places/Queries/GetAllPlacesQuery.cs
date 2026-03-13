@@ -23,5 +23,6 @@ namespace Application.Places.Queries
 
         // Сортировка
         public string? SortBy { get; set; }
+        public string? Search { get; set; }
     }
 }
