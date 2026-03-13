@@ -67,6 +67,17 @@ namespace Application.Places.QueryHandler
                 query = query.Where(p => p.CountryCode == request.CountryCode);
             }
 
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var term = request.Search.Trim().ToLower();
+                query = query.Where(p =>
+                    p.Name.ToLower().Contains(term) ||
+                    p.City.ToLower().Contains(term) ||
+                    (p.Address != null && p.Address.ToLower().Contains(term)) ||
+                    (p.Description != null && p.Description.ToLower().Contains(term))
+                );
+            }
+
             // ── Сортировка ──
             query = request.SortBy switch
             {
