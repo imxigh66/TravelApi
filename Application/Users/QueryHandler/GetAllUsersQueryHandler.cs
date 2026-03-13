@@ -5,6 +5,7 @@ using Application.Users.Queries;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Domain.Entities;
+using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -26,18 +27,37 @@ namespace Application.Users.QueryHandler
         }
         public async Task<PaginatedList<UserDto>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            var usersQuery = _context.Users
-            .AsNoTracking()
-            .OrderByDescending(u => u.CreatedAt)
-            .ProjectTo<UserDto>(_mapper.ConfigurationProvider);
+            var query = _context.Users.AsNoTracking();
 
-            
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var term = request.Search.Trim().ToLower();
+                query = query.Where(u =>
+                    u.Name.ToLower().Contains(term) ||
+                    u.Username.ToLower().Contains(term) ||
+                    u.Email.ToLower().Contains(term));
+            }
+
+       
+            if (!string.IsNullOrWhiteSpace(request.AccountType) &&
+                Enum.TryParse<AccountType>(request.AccountType, true, out var accountTypeEnum))
+            {
+                query = query.Where(u => u.AccountType == accountTypeEnum);
+            }
+
+            query = request.SortBy switch
+            {
+                "name" => query.OrderBy(u => u.Name),
+                _ => query.OrderByDescending(u => u.CreatedAt)
+            };
+
+            var projected = query.ProjectTo<UserDto>(_mapper.ConfigurationProvider);
+
             return await PaginatedList<UserDto>.CreateAsync(
-                usersQuery,
+                projected,
                 request.PageNumber,
                 request.PageSize,
-                cancellationToken
-            );
+                cancellationToken);
 
         }
     }

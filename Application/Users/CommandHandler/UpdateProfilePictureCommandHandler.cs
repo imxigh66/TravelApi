@@ -2,7 +2,9 @@
 using Application.Common.Models;
 using Application.DTO.Files;
 using Application.Users.Command;
+using Domain.Enum;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -39,7 +41,7 @@ namespace Application.Users.CommandHandler
 
             try
             {
-                // 1. Находим пользователя
+           
                 var user = await _context.Users.FindAsync(request.UserId);
                 if (user == null)
                 {
@@ -48,7 +50,7 @@ namespace Application.Users.CommandHandler
 
                 _logger.LogInformation($" Updating profile picture for user {user.UserId} ({user.Email})");
 
-                // 2. Валидируем изображение
+                
                 using var imageStream = request.Image.OpenReadStream();
 
                 if (!_imageProcessingService.IsValidImage(imageStream))
@@ -56,26 +58,35 @@ namespace Application.Users.CommandHandler
                     return OperationResult<FileUploadResultDto>.Failure("Invalid image file");
                 }
 
-                // 3. Обрабатываем изображение (создаем квадратное 400x400)
+               
                 imageStream.Position = 0;
                 processedImageStream = await _imageProcessingService.CreateSquareImageAsync(imageStream, 400);
 
-                // 4. Генерируем уникальное имя файла
+              
                 var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
                 var extension = Path.GetExtension(request.Image.FileName).ToLower();
                 var fileName = $"avatar-{timestamp}{extension}";
 
-                // 5. Формируем путь к папке пользователя
+               
                 var folderPath = $"profiles/{user.UserId}";
 
-                // 6. Удаляем старый аватар, если существует
-                if (!string.IsNullOrEmpty(user.ProfilePicture))
+              
+                var oldImages = await _context.Images
+                    .Where(i => i.EntityType == ImageEntityType.User
+                             && i.EntityId == user.UserId
+                             && i.IsCover
+                             && i.IsActive)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var oldImage in oldImages)
                 {
-                    _logger.LogInformation($" Deleting old profile picture: {user.ProfilePicture}");
-                    await _fileStorageService.DeleteFileAsync(user.ProfilePicture, cancellationToken);
+                    oldImage.IsActive = false;
+                    _logger.LogInformation($" Deactivated old profile image: {oldImage.ImageUrl}");
+
+                    await _fileStorageService.DeleteFileAsync(oldImage.ImageUrl, cancellationToken);
                 }
 
-                // 7. Загружаем новое изображение в S3
+             
                 var fileUrl = await _fileStorageService.UploadFileAsync(
                     processedImageStream,
                     fileName,
@@ -83,14 +94,35 @@ namespace Application.Users.CommandHandler
                     folderPath,
                     cancellationToken);
 
-                // 8. Обновляем URL в базе данных
+               
+                var imageEntity = new Domain.Entities.Image
+                {
+                    EntityType = ImageEntityType.User,
+                    EntityId = user.UserId,
+                    ImageUrl = fileUrl,
+                    SortOrder = 1,
+                    IsCover = true,
+                    UploadedBy = user.UserId,
+                    CreatedAt = DateTime.UtcNow,
+                    MimeType = "image/jpeg",
+                    OriginalFileName = request.Image.FileName,
+                    FileSize = processedImageStream.Length,
+                    Width = 400,
+                    Height = 400,
+                    IsActive = true
+                };
+
+                _context.Images.Add(imageEntity);
+
+              
                 user.ProfilePicture = fileUrl;
                 user.UpdatedAt = DateTime.UtcNow;
+
                 await _context.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation($" Profile picture updated successfully for user {user.UserId}");
 
-                // 9. Возвращаем результат
+      
                 var result = new FileUploadResultDto
                 {
                     FileUrl = fileUrl,
@@ -109,7 +141,7 @@ namespace Application.Users.CommandHandler
             }
             finally
             {
-                // Освобождаем ресурсы
+               
                 processedImageStream?.Dispose();
             }
         }

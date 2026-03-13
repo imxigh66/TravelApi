@@ -56,7 +56,8 @@ namespace Application.Auth.Login.CommandHandler
             var accessToken = _jwtTokenService.GenerateAccessToken(
             user.UserId,
             user.Email,
-            user.Username);
+            user.Username,
+            user.Role.ToString());
 
             var refreshTokenValue = _jwtTokenService.GenerateRefreshToken();
 

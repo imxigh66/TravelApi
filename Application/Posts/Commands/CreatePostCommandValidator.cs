@@ -19,12 +19,40 @@ namespace Application.Posts.Commands
                 .MaximumLength(200).WithMessage("Title must not exceed 200 characters")
                 .When(x => !string.IsNullOrEmpty(x.Title));
 
-            RuleFor(x => x.ImageUrl)
-                .MaximumLength(500).WithMessage("Image URL must not exceed 500 characters")
-                .When(x => !string.IsNullOrEmpty(x.ImageUrl));
+            RuleFor(x => x.Images)
+                .Must(HaveAtMost10Images).WithMessage("Maximum 10 images allowed")
+                .When(x => x.Images != null && x.Images.Any());
+
+            RuleForEach(x => x.Images)
+                .Must(BeAValidImage).WithMessage("Only image files are allowed (jpg, jpeg, png, gif, webp)")
+                .Must(BeUnder5MB).WithMessage("Each image must be less than 5MB")
+                .When(x => x.Images != null && x.Images.Any());
 
             RuleFor(x => x.UserId)
                 .GreaterThan(0).WithMessage("User ID is required");
+        }
+
+
+        private bool HaveAtMost10Images(System.Collections.Generic.List<Microsoft.AspNetCore.Http.IFormFile>? images)
+        {
+            return images == null || images.Count <= 10;
+        }
+
+        private bool BeAValidImage(Microsoft.AspNetCore.Http.IFormFile? file)
+        {
+            if (file == null) return true;
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            return allowedExtensions.Contains(extension);
+        }
+
+        private bool BeUnder5MB(Microsoft.AspNetCore.Http.IFormFile? file)
+        {
+            if (file == null) return true;
+
+            return file.Length <= 5 * 1024 * 1024; // 5MB
         }
     }
 }

@@ -11,14 +11,21 @@ namespace Application.Common.Interfaces
     public interface IApplicationDbContext
     {
         DbSet<User> Users { get; }
+        DbSet<SavedPlace> SavedPlaces { get; }
         DbSet<Place> Places { get; }
         DbSet<Trip> Trips { get; }
         DbSet<TripPlace> TripPlaces { get; }
         DbSet<Post> Posts { get; }
         DbSet<Comment> Comments { get; }
         DbSet<RefreshToken> RefreshTokens { get; }
+        DbSet<Like> Likes { get; }
+        DbSet<Image> Images { get; }
+        DbSet<CategoryTag> CategoryTags { get; }
+        DbSet<CategoryTagLink> CategoryTagLinks { get; }
+        DbSet<PlaceMood> PlaceMoods { get; }
 
         DbSet<UserFollow> UserFollows { get;  }
+        DbSet<TripNote> TripNotes { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }
