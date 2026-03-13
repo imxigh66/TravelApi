@@ -38,7 +38,7 @@ namespace Application.Users.CommandHandler
         {
             try
             {
-                // ✅ Используй Users.FindAsync - он автоматически трекается
+              
                 var user = await _context.Users.FindAsync(new object[] { request.UserId }, cancellationToken);
 
                 if (user == null)
@@ -54,14 +54,14 @@ namespace Application.Users.CommandHandler
                         "Only personal accounts can update this profile");
                 }
 
-                // ✅ Обновляем только переданные поля
+              
                 if (!string.IsNullOrWhiteSpace(request.Name))
                     user.Name = request.Name;
 
                 if (!string.IsNullOrWhiteSpace(request.Username))
                     user.Username = request.Username;
 
-                if (request.Country != null) // позволяет установить null
+                if (request.Country != null)
                     user.Country = string.IsNullOrWhiteSpace(request.Country) ? null : request.Country;
 
                 if (request.City != null)
@@ -73,16 +73,19 @@ namespace Application.Users.CommandHandler
                 if (request.ProfilePicture != null)
                     user.ProfilePicture = string.IsNullOrWhiteSpace(request.ProfilePicture) ? null : request.ProfilePicture;
 
-               
+                if (request.BannerPreset != null)
+                    user.BannerPreset = string.IsNullOrWhiteSpace(request.BannerPreset)
+                        ? null
+                        : request.BannerPreset;
 
                 user.UpdatedAt = DateTime.UtcNow;
 
-                // ✅ Сохраняем изменения
+        
                 await _context.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation($"User {request.UserId} profile updated successfully");
 
-                // ✅ Возвращаем обновленные данные
+           
                 var dto = _mapper.Map<PersonalProfileDto>(user);
 
                 return OperationResult<PersonalProfileDto>.Success(dto);

@@ -20,6 +20,7 @@ namespace Application.Users.Command
         public string? City { get; set; }
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
+        public string? BannerPreset { get; set; }
         public BusinessType? BusinessType { get; set; }
         public string? BusinessAddress { get; set; } = null!;
         public string? BusinessWebsite { get; set; } = null!;
