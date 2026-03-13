@@ -42,6 +42,8 @@ namespace Application.Users.QueryHandler
                 Email = user.Email,
                 Name = user.Name,
                 ProfilePicture = user.ProfilePicture,
+                BannerImage = user.BannerImage,
+                BannerPreset = user.BannerPreset,
                 Country = user.Country,
                 City = user.City,
                 AccountType = user.AccountType,
