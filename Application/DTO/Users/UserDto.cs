@@ -18,6 +18,8 @@ namespace Application.DTO.Users
 
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
+        public string? BannerImage { get; set; }
+        public string? BannerPreset { get; set; }
         public AccountType AccountType { get; set; }
 
         public DateTime CreatedAt { get; set; }

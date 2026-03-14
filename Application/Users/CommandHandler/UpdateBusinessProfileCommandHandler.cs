@@ -46,7 +46,7 @@ namespace Application.Users.CommandHandler
                         "Only business accounts can update this profile");
                 }
 
-                // Обновления
+                
                 if (!string.IsNullOrWhiteSpace(request.Name))
                     user.Name = request.Name;
 
@@ -64,6 +64,10 @@ namespace Application.Users.CommandHandler
 
                 if (request.ProfilePicture != null)
                     user.ProfilePicture = string.IsNullOrWhiteSpace(request.ProfilePicture) ? null : request.ProfilePicture;
+                if (request.BannerPreset != null)
+                    user.BannerPreset = string.IsNullOrWhiteSpace(request.BannerPreset)
+                        ? null
+                        : request.BannerPreset;
 
                 if (request.BusinessType.HasValue)
                     user.BusinessType = request.BusinessType;
@@ -83,7 +87,7 @@ namespace Application.Users.CommandHandler
 
                 _logger.LogInformation($"Business profile updated for user {request.UserId}");
 
-                // ✅ Мапим в UserResponse, который содержит ВСЕ поля включая AccountType!
+                
                 var dto = _mapper.Map<BusinessProfileDto>(user);
 
                 return OperationResult<BusinessProfileDto>.Success(dto);
