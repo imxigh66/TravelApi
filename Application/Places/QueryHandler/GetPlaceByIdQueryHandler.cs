@@ -28,6 +28,7 @@ namespace Application.Places.QueryHandler
         {
 
             var place = await _context.Places
+                 .Include(p => p.Creator)
         .AsNoTracking()
         .FirstOrDefaultAsync(p => p.PlaceId == request.PlaceId && p.IsActive, cancellationToken);
 
@@ -36,7 +37,7 @@ namespace Application.Places.QueryHandler
                 return OperationResult<PlaceDto>.Failure("Place not found");
             }
 
-            // Загружаем изображения
+           
             var images = await _context.Images
                 .AsNoTracking()
                 .Where(i => i.EntityType == ImageEntityType.Place
@@ -57,7 +58,7 @@ namespace Application.Places.QueryHandler
                 {
                     var jsonOptions = new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true // ✅ ОБЯЗАТЕЛЬНО
+                        PropertyNameCaseInsensitive = true 
                     };
 
                     additionalInfo = place.Category switch
@@ -75,9 +76,9 @@ namespace Application.Places.QueryHandler
 
                     if (additionalInfo != null)
                     {
-                        _logger.LogInformation($"✅ Successfully deserialized AdditionalInfo");
+                        _logger.LogInformation($" Successfully deserialized AdditionalInfo");
 
-                        // Проверим содержимое для Food
+               
                         if (additionalInfo is FoodPlaceInfo foodInfo)
                         {
                             _logger.LogInformation($"   Cuisine: {foodInfo.Cuisine}");
@@ -87,18 +88,18 @@ namespace Application.Places.QueryHandler
                     }
                     else
                     {
-                        _logger.LogWarning("⚠️ Deserialization returned null");
+                        _logger.LogWarning(" Deserialization returned null");
                     }
                 }
                 catch (JsonException ex)
                 {
-                    _logger.LogError(ex, $"❌ Failed to deserialize AdditionalInfo");
+                    _logger.LogError(ex, $" Failed to deserialize AdditionalInfo");
                     _logger.LogError($"   JSON was: {place.AdditionalInfo}");
                 }
             }
             else
             {
-                _logger.LogInformation($"ℹ️ No AdditionalInfo for place {place.PlaceId}");
+                _logger.LogInformation($" No AdditionalInfo for place {place.PlaceId}");
             }
 
 
@@ -123,11 +124,14 @@ namespace Application.Places.QueryHandler
                 AverageRating = place.AverageRating,
                 ReviewsCount = place.ReviewsCount,
                 SavesCount = place.SavesCount,
-                AdditionalInfo = additionalInfo, // ← Типизированный объект
+                AdditionalInfo = additionalInfo, 
                 ImageUrls = images.Select(i => i.ImageUrl).ToList(),
                 CoverImageUrl = images.FirstOrDefault(i => i.IsCover)?.ImageUrl,
                 Moods = moods, 
-                CreatedAt = place.CreatedAt
+                CreatedAt = place.CreatedAt,
+                CreatedBy=place.CreatedBy,
+                CreatorProfilePicture=place.Creator?.ProfilePicture,
+                CreatorUsername=place.Creator?.Username
             };
 
             return OperationResult<PlaceDto>.Success(dto);
