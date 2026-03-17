@@ -19,6 +19,7 @@ namespace Domain.Entities
         public string? Bio { get; set; }
         public string? ProfilePicture { get; set; }
         public string? BannerImage { get; set; }
+        public string? BannerPreset { get; set; }
 
         public bool EmailConfirmed { get; set; } = false;
         public string? EmailConfirmationToken { get; set; }

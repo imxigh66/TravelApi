@@ -41,16 +41,16 @@ namespace Application.Users.CommandHandler
 
             try
             {
-                // 1. Находим пользователя
+           
                 var user = await _context.Users.FindAsync(request.UserId);
                 if (user == null)
                 {
                     return OperationResult<FileUploadResultDto>.Failure("User not found");
                 }
 
-                _logger.LogInformation($"🔄 Updating profile picture for user {user.UserId} ({user.Email})");
+                _logger.LogInformation($" Updating profile picture for user {user.UserId} ({user.Email})");
 
-                // 2. Валидируем изображение
+                
                 using var imageStream = request.Image.OpenReadStream();
 
                 if (!_imageProcessingService.IsValidImage(imageStream))
@@ -58,19 +58,19 @@ namespace Application.Users.CommandHandler
                     return OperationResult<FileUploadResultDto>.Failure("Invalid image file");
                 }
 
-                // 3. Обрабатываем изображение (создаем квадратное 400x400)
+               
                 imageStream.Position = 0;
                 processedImageStream = await _imageProcessingService.CreateSquareImageAsync(imageStream, 400);
 
-                // 4. Генерируем уникальное имя файла
+              
                 var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
                 var extension = Path.GetExtension(request.Image.FileName).ToLower();
                 var fileName = $"avatar-{timestamp}{extension}";
 
-                // 5. Формируем путь к папке пользователя
+               
                 var folderPath = $"profiles/{user.UserId}";
 
-                // 6. НОВОЕ: Деактивируем старые изображения профиля в таблице Images
+              
                 var oldImages = await _context.Images
                     .Where(i => i.EntityType == ImageEntityType.User
                              && i.EntityId == user.UserId
@@ -81,13 +81,12 @@ namespace Application.Users.CommandHandler
                 foreach (var oldImage in oldImages)
                 {
                     oldImage.IsActive = false;
-                    _logger.LogInformation($"🗑️ Deactivated old profile image: {oldImage.ImageUrl}");
+                    _logger.LogInformation($" Deactivated old profile image: {oldImage.ImageUrl}");
 
-                    // Удаляем физический файл из S3
                     await _fileStorageService.DeleteFileAsync(oldImage.ImageUrl, cancellationToken);
                 }
 
-                // 7. Загружаем новое изображение в S3
+             
                 var fileUrl = await _fileStorageService.UploadFileAsync(
                     processedImageStream,
                     fileName,
@@ -95,7 +94,7 @@ namespace Application.Users.CommandHandler
                     folderPath,
                     cancellationToken);
 
-                // 8. НОВОЕ: Сохраняем в таблицу Images
+               
                 var imageEntity = new Domain.Entities.Image
                 {
                     EntityType = ImageEntityType.User,
@@ -115,15 +114,15 @@ namespace Application.Users.CommandHandler
 
                 _context.Images.Add(imageEntity);
 
-                // 9. Обновляем URL в User (для обратной совместимости)
+              
                 user.ProfilePicture = fileUrl;
                 user.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync(cancellationToken);
 
-                _logger.LogInformation($"✅ Profile picture updated successfully for user {user.UserId}");
+                _logger.LogInformation($" Profile picture updated successfully for user {user.UserId}");
 
-                // 10. Возвращаем результат
+      
                 var result = new FileUploadResultDto
                 {
                     FileUrl = fileUrl,
@@ -137,12 +136,12 @@ namespace Application.Users.CommandHandler
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"❌ Error updating profile picture for user {request.UserId}");
+                _logger.LogError(ex, $" Error updating profile picture for user {request.UserId}");
                 return OperationResult<FileUploadResultDto>.Failure($"Failed to update profile picture: {ex.Message}");
             }
             finally
             {
-                // Освобождаем ресурсы
+               
                 processedImageStream?.Dispose();
             }
         }

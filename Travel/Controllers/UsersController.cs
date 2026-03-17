@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Application.Users.Command;
 using Application.DTO.Places;
 using Application.Places.Queries;
+using Application.DTO.Files;
 
 namespace TravelApi.Controllers
 {
@@ -81,12 +82,25 @@ namespace TravelApi.Controllers
             return Ok(ApiResponse<UserResponse>.SuccessResponse(result.Data!));
         }
 
+        [Authorize]
         [HttpGet]
-        public async Task<ActionResult<PaginatedList<UserResponse>>> GetAllUsers(
-    [FromQuery] int pageNumber = 1,
-    [FromQuery] int pageSize = 10)
+        [ProducesResponseType(typeof(PaginatedList<UserDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<PaginatedList<UserDto>>> GetAll(
+              [FromQuery] int pageNumber = 1,
+              [FromQuery] int pageSize = 20,
+              [FromQuery] string? search = null,
+              [FromQuery] string? accountType = null,
+              [FromQuery] string? sortBy = null)
         {
-            var query = new GetAllUsersQuery { PageNumber = pageNumber, PageSize = pageSize };
+            var query = new GetAllUsersQuery
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                Search = search,
+                AccountType = accountType,
+                SortBy = sortBy,
+            };
+
             var result = await _mediator.Send(query);
             return Ok(result);
         }
@@ -257,6 +271,47 @@ namespace TravelApi.Controllers
             });
 
             return Ok(result);
+        }
+
+
+
+        [Authorize]
+        [HttpPost("banner")]
+        [ProducesResponseType(typeof(ApiResponse<FileUploadResultDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ApiResponse<FileUploadResultDto>>> UploadBanner(IFormFile image)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new UpdateBannerCommand { UserId = userId, Image = image };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return Ok(ApiResponse<FileUploadResultDto>.SuccessResponse(result.Data!));
+        }
+
+        [Authorize]
+        [HttpDelete("banner")]
+        public async Task<IActionResult> DeleteBanner()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new DeleteBannerCommand { UserId = userId };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return Ok(ApiResponse<string>.SuccessResponse("Banner deleted"));
         }
 
     }

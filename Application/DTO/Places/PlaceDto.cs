@@ -40,7 +40,14 @@ namespace Application.DTO.Places
         public List<MoodType> Moods { get; set; } = new();
         public List<CategoryTagDto> CategoryTags { get; set; } = new();
         // Метаданные
-        //public int? CreatedBy { get; set; }
+        public int? CreatedBy { get; set; }
+        public string? CreatorUsername { get; set; }
+        public string? CreatorProfilePicture { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        // ── Модерация ──
+        public PlaceStatus Status { get; set; }
+        public string? RejectionReason { get; set; }
+        public DateTime? ReviewedAt { get; set; }
     }
 }
