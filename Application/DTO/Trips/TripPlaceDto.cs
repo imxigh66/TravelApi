@@ -15,5 +15,7 @@ namespace Application.DTO.Trips
         public string? CoverImageUrl { get; set; }
         public string? Notes { get; set; } 
         public int SortOrder { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 }

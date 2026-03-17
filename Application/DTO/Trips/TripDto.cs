@@ -20,5 +20,8 @@ namespace Application.DTO.Trips
         public int PlacesCount { get; set; }
         public string? CoverImageUrl { get; set; } 
         public DateTime CreatedAt { get; set; }
+         public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+
     }
 }
