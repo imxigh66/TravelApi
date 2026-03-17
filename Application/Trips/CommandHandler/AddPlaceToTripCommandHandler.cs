@@ -76,7 +76,9 @@ namespace Application.Trips.CommandHandler
                 Address = place.Address,
                 Notes = request.Notes,
                 SortOrder = sortOrder,
-                CoverImageUrl = coverImageUrl
+                CoverImageUrl = coverImageUrl,
+                Latitude = place.Latitude,
+                Longitude = place.Longitude
             };
 
             return OperationResult<TripPlaceDto>.Success(dto);

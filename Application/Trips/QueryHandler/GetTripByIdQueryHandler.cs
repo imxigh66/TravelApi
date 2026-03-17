@@ -73,7 +73,9 @@ namespace Application.Trips.QueryHandler
                     Address = tp.Place.Address,
                     Notes = tp.Notes,
                     SortOrder = tp.SortOrder,
-                    CoverImageUrl = coverImages.GetValueOrDefault(tp.PlaceId)
+                    CoverImageUrl = coverImages.GetValueOrDefault(tp.PlaceId),
+                    Latitude = tp.Place.Latitude,
+                    Longitude = tp.Place.Longitude
                 })
                 .ToList()
             };
