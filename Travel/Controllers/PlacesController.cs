@@ -400,7 +400,23 @@ namespace TravelApi.Controllers
             return Ok(ApiResponse<bool>.SuccessResponse(result, "IsSaved retrieved successfully"));
         }
 
+        [HttpGet("my")]
+        [Authorize]
+        public async Task<IActionResult> GetMyPlaces(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+            var result = await _mediator.Send(new GetCreatedPlacesQuery
+            {
+                UserId = userId,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+            });
+
+            return Ok(result);
+        }
         private int GetCurrentUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

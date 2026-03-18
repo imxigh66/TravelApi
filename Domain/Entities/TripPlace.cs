@@ -12,10 +12,13 @@ namespace Domain.Entities
         public int PlaceId { get; set; }
         public int SortOrder { get; set; }
         public string? Notes { get; set; }
+        public int? DayNumber { get; set; }           
+        public int? DestinationId { get; set; }    
 
         // NAV
         public Trip Trip { get; set; } = null!;
         public Place Place { get; set; } = null!;
+        public TripDestination? Destination { get; set; }
     }
 
 }

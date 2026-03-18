@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces;
 using Application.DTO.Trips;
+using Application.DTO.Trips.Destination;
 using Application.Trips.Queries;
 using Domain.Enum;
 using MediatR;
@@ -22,23 +23,25 @@ namespace Application.Trips.QueryHandler
         public async Task<List<TripDto>> Handle(GetMyTripsQuery request, CancellationToken cancellationToken)
         {
             var trips = await _context.Trips
-       .Where(t => t.OwnerId == request.OwnerId)
-       .OrderByDescending(t => t.CreatedAt)
-       .Include(t => t.TripPlaces)
-       .ToListAsync(cancellationToken);
+                .Where(t => t.OwnerId == request.OwnerId)
+                .OrderByDescending(t => t.CreatedAt)
+                .Include(t => t.TripPlaces)
+                .Include(t => t.Destinations)   
+                .ToListAsync(cancellationToken);
 
-           
             var placeIds = trips
                 .SelectMany(t => t.TripPlaces)
                 .Select(tp => tp.PlaceId)
                 .Distinct()
                 .ToList();
 
-            var coverImages = await _context.Images
-                .Where(i => placeIds.Contains(i.EntityId)
-                         && i.EntityType == ImageEntityType.Place
-                         && i.IsCover)
-                .ToDictionaryAsync(i => i.EntityId, i => i.ImageUrl, cancellationToken);
+            var coverImages = placeIds.Any()
+                ? await _context.Images
+                    .Where(i => placeIds.Contains(i.EntityId)
+                             && i.EntityType == ImageEntityType.Place
+                             && i.IsCover)
+                    .ToDictionaryAsync(i => i.EntityId, i => i.ImageUrl, cancellationToken)
+                : new Dictionary<int, string>();
 
             return trips.Select(t => new TripDto
             {
@@ -55,7 +58,20 @@ namespace Application.Trips.QueryHandler
                 CoverImageUrl = t.TripPlaces
                     .OrderBy(tp => tp.SortOrder)
                     .Select(tp => coverImages.GetValueOrDefault(tp.PlaceId))
-                    .FirstOrDefault(url => url != null)
+                    .FirstOrDefault(url => url != null),
+                Destinations = t.Destinations   
+                    .OrderBy(d => d.SortOrder)
+                    .Select(d => new TripDestinationDto
+                    {
+                        Id = d.Id,
+                        TripId = d.TripId,
+                        City = d.City,
+                        CountryCode = d.CountryCode,
+                        SortOrder = d.SortOrder,
+                        DateFrom = d.DateFrom,
+                        DateTo = d.DateTo,
+                    })
+                    .ToList()
             }).ToList();
         }
     }

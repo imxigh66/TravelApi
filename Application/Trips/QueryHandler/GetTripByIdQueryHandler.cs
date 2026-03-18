@@ -1,6 +1,7 @@
 ﻿using Application.Common.Interfaces;
 using Application.Common.Models;
 using Application.DTO.Trips;
+using Application.DTO.Trips.Destination;
 using Application.Trips.Queries;
 using Domain.Enum;
 using MediatR;
@@ -26,6 +27,7 @@ namespace Application.Trips.QueryHandler
             .Include(t => t.Owner)
             .Include(t => t.TripPlaces)
                 .ThenInclude(tp => tp.Place)
+            .Include(t => t.Destinations)
             .FirstOrDefaultAsync(t => t.TripId == request.TripId, cancellationToken);
 
             if (trip == null)
@@ -63,19 +65,36 @@ namespace Application.Trips.QueryHandler
                 .OrderBy(tp => tp.SortOrder)
                 .Select(tp => coverImages.GetValueOrDefault(tp.PlaceId))
                 .FirstOrDefault(url => url != null),
+                Destinations = trip.Destinations
+                    .OrderBy(d => d.SortOrder)
+                    .Select(d => new TripDestinationDto
+                    {
+                        Id = d.Id,
+                        TripId = d.TripId,
+                        City = d.City,
+                        CountryCode = d.CountryCode,
+                        SortOrder = d.SortOrder,
+                        DateFrom = d.DateFrom,
+                        DateTo = d.DateTo,
+                    })
+                    .ToList(),
                 Places = trip.TripPlaces
-                .OrderBy(tp => tp.SortOrder)
-                .Select(tp => new TripPlaceDto
-                {
-                    PlaceId = tp.PlaceId,
-                    Name = tp.Place.Name,
-                    City = tp.Place.City,
-                    Address = tp.Place.Address,
-                    Notes = tp.Notes,
-                    SortOrder = tp.SortOrder,
-                    CoverImageUrl = coverImages.GetValueOrDefault(tp.PlaceId)
-                })
-                .ToList()
+                    .OrderBy(tp => tp.SortOrder)
+                    .Select(tp => new TripPlaceDto
+                    {
+                        PlaceId = tp.PlaceId,
+                        Name = tp.Place.Name,
+                        City = tp.Place.City,
+                        Address = tp.Place.Address,
+                        Notes = tp.Notes,
+                        SortOrder = tp.SortOrder,
+                        CoverImageUrl = coverImages.GetValueOrDefault(tp.PlaceId),
+                        Latitude = tp.Place.Latitude,
+                        Longitude = tp.Place.Longitude,
+                        DayNumber = tp.DayNumber,
+                        DestinationId = tp.DestinationId,
+                    })
+                    .ToList()
             };
 
             return OperationResult<TripDetailDto>.Success(dto);
