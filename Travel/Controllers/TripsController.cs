@@ -1,6 +1,7 @@
 ﻿using Application.Common.Models;
 using Application.DTO.Posts;
 using Application.DTO.Trips;
+using Application.DTO.Trips.Destination;
 using Application.Trips.Commands;
 using Application.Trips.Queries;
 using Microsoft.AspNetCore.Authorization;
@@ -246,6 +247,46 @@ namespace TravelApi.Controllers
             if (!result.IsSuccess)
                 return BadRequest(ErrorResponse.BadRequest(result.Error!));
             return NoContent();
+        }
+
+        [Authorize]
+        [HttpPut("{tripId}/destinations")]
+        public async Task<IActionResult> UpsertDestinations(int tripId, [FromBody] UpsertDestinationsRequest dto)
+        {
+            if (!TryGetUserId(out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new UpsertDestinationsCommand
+            {
+                TripId = tripId,
+                UserId = userId,
+                Destinations = dto.Destinations,
+            };
+
+            var result = await _mediator.Send(command);
+            if (!result.IsSuccess) return BadRequest(ErrorResponse.BadRequest(result.Error!));
+            return Ok(ApiResponse<List<TripDestinationDto>>.SuccessResponse(result.Data!));
+        }
+
+        [Authorize]
+        [HttpPatch("{tripId}/places/{placeId}/day")]
+        public async Task<IActionResult> SetPlaceDay(int tripId, int placeId, [FromBody] SetPlaceDayRequest dto)
+        {
+            if (!TryGetUserId(out int userId))
+                return Unauthorized(ErrorResponse.Unauthorized("Invalid token"));
+
+            var command = new SetPlaceDayCommand
+            {
+                TripId = tripId,
+                PlaceId = placeId,
+                UserId = userId,
+                DayNumber = dto.DayNumber,
+                DestinationId = dto.DestinationId,
+            };
+
+            var result = await _mediator.Send(command);
+            if (!result.IsSuccess) return BadRequest(ErrorResponse.BadRequest(result.Error!));
+            return Ok();
         }
     }
 }

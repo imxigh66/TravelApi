@@ -28,6 +28,7 @@ namespace Application.Common.Interfaces
         DbSet<TripNote> TripNotes { get; }
         DbSet<Budget> Budgets { get; }
         DbSet<Expense> Expenses { get; }
+        DbSet<TripDestination> TripDestinations { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

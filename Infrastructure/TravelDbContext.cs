@@ -32,6 +32,7 @@ namespace Infrastructure
         public DbSet<UserFollow> UserFollows => Set<UserFollow>();
 
         public DbSet<TripNote> TripNotes => Set<TripNote>();
+        public DbSet<TripDestination> TripDestinations => Set<TripDestination>();
 
         public DbSet<Budget> Budgets => Set<Budget>();
         public DbSet<Expense> Expenses => Set<Expense>();
@@ -302,12 +303,35 @@ namespace Infrastructure
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
+
+            b.Entity<TripDestination>(e =>
+            {
+                e.ToTable("trip_destination");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.City).HasMaxLength(100).IsRequired();
+                e.Property(x => x.CountryCode).HasMaxLength(2).IsRequired();
+                e.Property(x => x.DateFrom).HasColumnType("date");
+                e.Property(x => x.DateTo).HasColumnType("date");
+
+                e.HasIndex(x => new { x.TripId, x.SortOrder }).HasDatabaseName("ix_trip_dest_sort");
+
+                e.HasOne(x => x.Trip)
+                 .WithMany(t => t.Destinations)
+                 .HasForeignKey(x => x.TripId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
             // TRIP_PLACE (many-to-many Trip ↔ Place)
             b.Entity<TripPlace>(e =>
             {
                 e.ToTable("trip_place");
                 e.HasKey(x => new { x.TripId, x.PlaceId });
                 e.Property(x => x.Notes).HasColumnType("nvarchar(max)");
+                e.Property(x => x.DayNumber).IsRequired(false);
+                e.Property(x => x.DestinationId).IsRequired(false);
+                e.HasOne(x => x.Destination)
+ .WithMany()
+ .HasForeignKey(x => x.DestinationId)
+ .OnDelete(DeleteBehavior.SetNull);
                 e.HasIndex(x => new { x.TripId, x.SortOrder }).HasDatabaseName("ix_trip_place_sort");
 
                 e.HasOne(x => x.Trip)
