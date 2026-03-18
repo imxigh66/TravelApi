@@ -314,5 +314,46 @@ namespace TravelApi.Controllers
             return Ok(ApiResponse<string>.SuccessResponse("Banner deleted"));
         }
 
+
+        private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    
+        [HttpGet("{userId:int}/countries")]
+        public async Task<IActionResult> GetCountries(int userId)
+        {
+            var result = await _mediator.Send(new GetVisitedCountriesQuery { UserId = userId });
+            return Ok(ApiResponse<List<VisitedCountryDto>>.SuccessResponse(result));
+        }
+
+      
+        [HttpPost("countries")]
+        [Authorize]
+        public async Task<IActionResult> AddCountry([FromBody] AddVisitedCountryRequest request)
+        {
+            var result = await _mediator.Send(new AddVisitedCountryCommand
+            {
+                UserId = UserId,
+                CountryCode = request.CountryCode,
+                VisitedAt = request.VisitedAt,
+                Note = request.Note,
+            });
+            if (!result.IsSuccess) return BadRequest(result.Error);
+            return Ok(ApiResponse<VisitedCountryDto>.SuccessResponse(result.Data!));
+        }
+
+      
+        [HttpDelete("countries/{countryCode}")]
+        [Authorize]
+        public async Task<IActionResult> RemoveCountry(string countryCode)
+        {
+            var result = await _mediator.Send(new RemoveVisitedCountryCommand
+            {
+                UserId = UserId,
+                CountryCode = countryCode,
+            });
+            if (!result.IsSuccess) return BadRequest(result.Error);
+            return Ok();
+        }
+
     }
 }

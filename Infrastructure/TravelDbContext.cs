@@ -16,6 +16,7 @@ namespace Infrastructure
         public TravelDbContext(DbContextOptions<TravelDbContext> options) : base(options) { }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<UserVisitedCountry> UserVisitedCountries => Set<UserVisitedCountry>();
         public DbSet<SavedPlace> SavedPlaces => Set<SavedPlace>();
         public DbSet<Place> Places => Set<Place>();
         public DbSet<Trip> Trips => Set<Trip>();
@@ -84,6 +85,25 @@ namespace Infrastructure
 
                 e.HasIndex(x => x.Username).IsUnique();
                 e.HasIndex(x => x.Email).IsUnique();
+            });
+
+            b.Entity<UserVisitedCountry>(e =>
+            {
+                e.ToTable("user_visited_country");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.CountryCode).HasMaxLength(2).IsRequired();
+                e.Property(x => x.Note).HasMaxLength(500);
+                e.Property(x => x.VisitedAt).HasColumnType("date");
+
+         
+                e.HasIndex(x => new { x.UserId, x.CountryCode })
+                 .IsUnique()
+                 .HasDatabaseName("ix_visited_country_user_code");
+
+                e.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
 
             b.Entity<UserFollow>(e =>

@@ -3,6 +3,7 @@ using Application.Common.Models;
 using Application.DTO.Posts;
 using Application.DTO.Trips;
 using Application.Trips.Commands;
+using Application.Users.Command;
 using Domain.Entities;
 using Domain.Enum;
 using MediatR;
@@ -18,9 +19,11 @@ namespace Application.Trips.CommandHandler
     public class CreateTripCommandHandler : IRequestHandler<CreateTripCommand, OperationResult<TripDto>>
     {
         private readonly IApplicationDbContext _context;
-        public CreateTripCommandHandler(IApplicationDbContext context)
+        private readonly IMediator _mediator;
+        public CreateTripCommandHandler(IApplicationDbContext context, IMediator mediator)
         {
             _context = context;
+            _mediator = mediator;
         }
         public async Task<OperationResult<TripDto>> Handle(CreateTripCommand request, CancellationToken cancellationToken)
         {
@@ -56,6 +59,11 @@ namespace Application.Trips.CommandHandler
                 CreatedAt = trip.CreatedAt,
             };
 
+            await _mediator.Send(new SyncCountryFromTripCommand
+            {
+                UserId = request.OwnerId,
+                CountryCode = request.CountryCode,
+            }, cancellationToken);
             return OperationResult<TripDto>.Success(tripDto);
 
 
