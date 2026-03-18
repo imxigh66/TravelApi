@@ -26,6 +26,8 @@ namespace Application.Common.Interfaces
 
         DbSet<UserFollow> UserFollows { get;  }
         DbSet<TripNote> TripNotes { get; }
+        DbSet<Budget> Budgets { get; }
+        DbSet<Expense> Expenses { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

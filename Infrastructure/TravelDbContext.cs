@@ -32,6 +32,9 @@ namespace Infrastructure
         public DbSet<UserFollow> UserFollows => Set<UserFollow>();
 
         public DbSet<TripNote> TripNotes => Set<TripNote>();
+
+        public DbSet<Budget> Budgets => Set<Budget>();
+        public DbSet<Expense> Expenses => Set<Expense>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -264,6 +267,38 @@ namespace Infrastructure
                 e.HasOne(x => x.Owner)
                  .WithMany(u => u.Trips)
                  .HasForeignKey(x => x.OwnerId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<Budget>(e =>
+            {
+                e.ToTable("trip_budget");
+                e.HasKey(x => x.BudgetId);
+                e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+                e.Property(x => x.TotalLimit).HasColumnType("decimal(10,2)");
+
+                e.HasIndex(x => x.TripId).IsUnique().HasDatabaseName("ix_budget_trip"); // один бюджет на поездку
+
+                e.HasOne(x => x.Trip)
+                 .WithOne()                       // Trip не знает о Budget — односторонняя связь
+                 .HasForeignKey<Budget>(x => x.TripId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<Expense>(e =>
+            {
+                e.ToTable("trip_expense");
+                e.HasKey(x => x.ExpenseId);
+                e.Property(x => x.Category).HasMaxLength(50).IsRequired();
+                e.Property(x => x.Amount).HasColumnType("decimal(10,2)");
+                e.Property(x => x.Description).HasColumnType("nvarchar(max)");
+                e.Property(x => x.Date).HasColumnType("date");
+
+                e.HasIndex(x => x.BudgetId).HasDatabaseName("ix_expense_budget");
+
+                e.HasOne(x => x.Budget)
+                 .WithMany(b => b.Expenses)
+                 .HasForeignKey(x => x.BudgetId)
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
