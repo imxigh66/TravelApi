@@ -25,7 +25,7 @@ namespace Domain.Entities
         public User Owner { get; set; } = null!;
         public ICollection<TripPlace> TripPlaces { get; set; } = new List<TripPlace>();
         public ICollection<TripNote> Notes { get; set; } = new List<TripNote>();
-        // удобный доступ ко множеству мест через TripPlaces можно собрать проекцией
+        public ICollection<TripDestination> Destinations { get; set; } = new List<TripDestination>();
     }
 
 }

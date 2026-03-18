@@ -4,6 +4,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(TravelDbContext))]
-    partial class TravelDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260318100611_AddBudget")]
+    partial class AddBudget
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -584,44 +587,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("trip", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Entities.TripDestination", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("CountryCode")
-                        .IsRequired()
-                        .HasMaxLength(2)
-                        .HasColumnType("nvarchar(2)");
-
-                    b.Property<DateOnly?>("DateFrom")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("DateTo")
-                        .HasColumnType("date");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TripId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TripId", "SortOrder")
-                        .HasDatabaseName("ix_trip_dest_sort");
-
-                    b.ToTable("trip_destination", (string)null);
-                });
-
             modelBuilder.Entity("Domain.Entities.TripNote", b =>
                 {
                     b.Property<int>("TripNoteId")
@@ -663,12 +628,6 @@ namespace Infrastructure.Migrations
                     b.Property<int>("PlaceId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("DayNumber")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("DestinationId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
@@ -676,8 +635,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("TripId", "PlaceId");
-
-                    b.HasIndex("DestinationId");
 
                     b.HasIndex("PlaceId");
 
@@ -991,17 +948,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("Domain.Entities.TripDestination", b =>
-                {
-                    b.HasOne("Domain.Entities.Trip", "Trip")
-                        .WithMany("Destinations")
-                        .HasForeignKey("TripId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Trip");
-                });
-
             modelBuilder.Entity("Domain.Entities.TripNote", b =>
                 {
                     b.HasOne("Domain.Entities.Trip", "Trip")
@@ -1015,11 +961,6 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.TripPlace", b =>
                 {
-                    b.HasOne("Domain.Entities.TripDestination", "Destination")
-                        .WithMany()
-                        .HasForeignKey("DestinationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Domain.Entities.Place", "Place")
                         .WithMany("TripPlaces")
                         .HasForeignKey("PlaceId")
@@ -1031,8 +972,6 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("TripId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Destination");
 
                     b.Navigation("Place");
 
@@ -1090,8 +1029,6 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Trip", b =>
                 {
-                    b.Navigation("Destinations");
-
                     b.Navigation("Notes");
 
                     b.Navigation("TripPlaces");

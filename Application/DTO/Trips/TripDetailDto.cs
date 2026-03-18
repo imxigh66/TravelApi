@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Application.DTO.Trips.Destination;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +13,6 @@ namespace Application.DTO.Trips
         public string OwnerUsername { get; set; }
         public string? OwnerProfilePicture { get; set; }
         public List<TripPlaceDto> Places { get; set; }
+        public List<TripDestinationDto> Destinations { get; set; } = new();
     }
 }

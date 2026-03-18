@@ -1,4 +1,5 @@
-﻿using Domain.Enum;
+﻿using Application.DTO.Trips.Destination;
+using Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,7 @@ namespace Application.DTO.Trips
         public DateTime CreatedAt { get; set; }
          public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public List<TripDestinationDto> Destinations { get; set; } = new();
 
     }
 }

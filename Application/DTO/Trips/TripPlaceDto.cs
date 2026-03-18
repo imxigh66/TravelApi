@@ -17,5 +17,8 @@ namespace Application.DTO.Trips
         public int SortOrder { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+
+        public int? DayNumber { get; set; }
+        public int? DestinationId { get; set; }
     }
 }
