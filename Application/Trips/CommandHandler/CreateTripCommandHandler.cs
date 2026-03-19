@@ -63,6 +63,7 @@ namespace Application.Trips.CommandHandler
             {
                 UserId = request.OwnerId,
                 CountryCode = request.CountryCode,
+                City = request.City,
             }, cancellationToken);
             return OperationResult<TripDto>.Success(tripDto);
 

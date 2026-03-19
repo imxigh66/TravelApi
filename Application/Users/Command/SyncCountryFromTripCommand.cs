@@ -11,6 +11,6 @@ namespace Application.Users.Command
     {
         public int UserId { get; set; }
         public string CountryCode { get; set; } = null!;
-        public string City { get; set; } = null!;
+        public string? City { get; set; } = null!;
     }
 }

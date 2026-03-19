@@ -92,6 +92,7 @@ namespace Infrastructure
                 e.ToTable("user_visited_country");
                 e.HasKey(x => x.Id);
                 e.Property(x => x.CountryCode).HasMaxLength(2).IsRequired();
+                e.Property(x => x.City).HasMaxLength(100).IsRequired(false);
                 e.Property(x => x.Note).HasMaxLength(500);
                 e.Property(x => x.VisitedAt).HasColumnType("date");
 
