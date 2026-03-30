@@ -2,6 +2,7 @@
 using Application.Common.Models;
 using Application.DTO.Trips.Destination;
 using Application.Trips.Commands;
+using Application.Users.Command;
 using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,12 @@ namespace Application.Trips.CommandHandler
        : IRequestHandler<UpsertDestinationsCommand, OperationResult<List<TripDestinationDto>>>
     {
         private readonly IApplicationDbContext _context;
-        public UpsertDestinationsCommandHandler(IApplicationDbContext context) => _context = context;
+        private readonly IMediator _mediator;   
+        public UpsertDestinationsCommandHandler(IApplicationDbContext context,IMediator mediator)
+        {
+            _context = context;
+            _mediator = mediator;
+        }
 
         public async Task<OperationResult<List<TripDestinationDto>>> Handle(
             UpsertDestinationsCommand request, CancellationToken cancellationToken)
@@ -82,6 +88,15 @@ namespace Application.Trips.CommandHandler
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+            foreach (var dest in request.Destinations)
+            {
+                await _mediator.Send(new SyncCountryFromTripCommand
+                {
+                    UserId = request.UserId,
+                    CountryCode = dest.CountryCode,
+                    City = dest.City
+                }, cancellationToken);
+            }
 
             var result = await _context.TripDestinations
                 .AsNoTracking()
