@@ -1,4 +1,6 @@
-﻿using Application.Common.Models;
+﻿using Application.AI.Commands;
+using Application.Common.Models;
+using Application.DTO.Places;
 using Application.DTO.Posts;
 using Application.DTO.Trips;
 using Application.DTO.Trips.Destination;
@@ -288,5 +290,29 @@ namespace TravelApi.Controllers
             if (!result.IsSuccess) return BadRequest(ErrorResponse.BadRequest(result.Error!));
             return Ok();
         }
+
+        [Authorize]
+        [HttpPost("{tripId}/ai/suggest")]
+        public async Task<ActionResult<ApiResponse<List<AiPlaceSuggestionDto>>>> AiSuggest(
+    int tripId, [FromBody] AiSuggestRequest dto)
+        {
+            if (!TryGetUserId(out int userId))
+                return Unauthorized();
+
+            var command = new AiSuggestPlacesCommand
+            {
+                TripId = tripId,
+                UserId = userId,
+                Prompt = dto.Prompt
+            };
+
+            var result = await _mediator.Send(command);
+            if (!result.IsSuccess)
+                return BadRequest(ErrorResponse.BadRequest(result.Error!));
+
+            return Ok(ApiResponse<List<AiPlaceSuggestionDto>>.SuccessResponse(result.Data!));
+        }
+
+        public record AiSuggestRequest(string Prompt);
     }
 }

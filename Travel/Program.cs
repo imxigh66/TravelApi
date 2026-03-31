@@ -20,6 +20,7 @@ using System;
 using System.Text;
 using TravelApi.Middleware;
 using System.Text.Json;
+using Infrastructure.ExternalServices.AI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,7 +33,7 @@ builder.Services.AddScoped<IApplicationDbContext>(sp =>
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-
+builder.Services.AddHttpClient<IAiService, GroqService>();
 builder.Services.Configure<MailtrapOptions>(
     builder.Configuration.GetSection("Mailtrap"));
 builder.Services.AddScoped<IEmailService, MailtrapService>();
