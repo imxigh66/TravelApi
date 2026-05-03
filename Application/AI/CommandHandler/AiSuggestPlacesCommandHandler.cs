@@ -1,8 +1,8 @@
 ﻿using Application.AI.Commands;
 using Application.Common.Interfaces;
 using Application.Common.Models;
+using Application.DTO.AI;
 using Application.DTO.Places;
-using Application.DTO.Trips;
 using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace Application.AI.CommandHandler
 {
     public class AiSuggestPlacesCommandHandler
-        : IRequestHandler<AiSuggestPlacesCommand, OperationResult<List<AiPlaceSuggestionDto>>>
+        : IRequestHandler<AiSuggestPlacesCommand, OperationResult<AiSuggestResultDto>>
     {
         private readonly IApplicationDbContext _context;
         private readonly IAiService _aiService;
@@ -27,7 +27,7 @@ namespace Application.AI.CommandHandler
             _aiService=aiService;
         }
 
-        public async Task<OperationResult<List<AiPlaceSuggestionDto>>> Handle(
+        public async Task<OperationResult<AiSuggestResultDto>> Handle(
             AiSuggestPlacesCommand request, CancellationToken cancellationToken)
         {
 
@@ -38,10 +38,10 @@ namespace Application.AI.CommandHandler
 
 
             if (trip == null)
-                return OperationResult<List<AiPlaceSuggestionDto>>.Failure("Trip not found");
+                return OperationResult<AiSuggestResultDto>.Failure("Trip not found");
 
             if (trip.OwnerId != request.UserId)
-                return OperationResult<List<AiPlaceSuggestionDto>>.Failure("Access denied");
+                return OperationResult<AiSuggestResultDto>.Failure("Access denied");
 
             var alreadyAdded = trip.TripPlaces
                 .Select(tp => tp.Place.Name).ToList();
@@ -53,6 +53,7 @@ namespace Application.AI.CommandHandler
             var availablePlaces = await _context.Places
     .Where(p => p.IsActive && cities.Contains(p.City))
     .Select(p => new { p.Name, p.Category, p.City })
+     .Distinct()
     .Take(50)
     .ToListAsync(cancellationToken);
 
@@ -67,7 +68,12 @@ namespace Application.AI.CommandHandler
                 trip.City, request.Prompt, alreadyAdded, availableStr, cancellationToken);
 
             if (!suggestions.Any())
-                return OperationResult<List<AiPlaceSuggestionDto>>.Failure("AI не вернул результаты");
+                return OperationResult<AiSuggestResultDto>.Success(new AiSuggestResultDto
+                {
+                    Places = new List<AiPlaceSuggestionDto>(),
+                    Message = "AI не нашёл подходящих мест по вашему запросу"
+                });
+
 
             var suggestedCategories = suggestions
     .Select(s => s.Category)
@@ -83,11 +89,7 @@ namespace Application.AI.CommandHandler
             var names = suggestions.Select(s => s.Name.ToLower()).ToList();
 
             var places = await _context.Places
-    .Where(p => p.IsActive &&
-                cities.Contains(p.City) &&
-                categoryEnums.Contains(p.Category))
-    .OrderByDescending(p => p.AverageRating)
-    .Take(6)
+    .Where(p => p.IsActive && cities.Contains(p.City))
     .ToListAsync(cancellationToken);
 
             var filtered = places
@@ -98,21 +100,37 @@ namespace Application.AI.CommandHandler
     .Take(6)
     .ToList();
 
-            var result = places.Select(p => new AiPlaceSuggestionDto
+            var placeIds = filtered.Select(p => p.PlaceId).ToList();
+
+            var images = await _context.Images
+    .Where(i => i.EntityType == ImageEntityType.Place
+             && placeIds.Contains(i.EntityId)
+             && i.IsCover)
+    .ToListAsync(cancellationToken);
+
+
+
+            var result = filtered.Select(p => new AiPlaceSuggestionDto
             {
                 PlaceId = p.PlaceId,
                 Name = p.Name,
                 City = p.City,
                 Address = p.Address,
-                CoverImageUrl = p.Images.FirstOrDefault()?.ImageUrl,
+                CoverImageUrl = images.FirstOrDefault(i => i.EntityId == p.PlaceId)?.ImageUrl,
                 Latitude = p.Latitude,
                 Longitude = p.Longitude,
                 Category = p.Category.ToString(),
                 AverageRating = p.AverageRating,
                 AlreadyInTrip = alreadyAdded.Contains(p.Name)
             }).ToList();
-
-            return OperationResult<List<AiPlaceSuggestionDto>>.Success(result);
+            Console.WriteLine($"Suggestions from AI: {string.Join(", ", names)}");
+            Console.WriteLine($"Filtered count: {filtered.Count}");
+            Console.WriteLine($"Result count: {result.Count}");
+            return OperationResult<AiSuggestResultDto>.Success(new AiSuggestResultDto
+            {
+                Places = result,
+                Message = null
+            });
         }
     }
 }

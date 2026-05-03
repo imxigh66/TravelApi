@@ -1,5 +1,6 @@
 ﻿using Application.AI.Commands;
 using Application.Common.Models;
+using Application.DTO.AI;
 using Application.DTO.Places;
 using Application.DTO.Posts;
 using Application.DTO.Trips;
@@ -293,7 +294,7 @@ namespace TravelApi.Controllers
 
         [Authorize]
         [HttpPost("{tripId}/ai/suggest")]
-        public async Task<ActionResult<ApiResponse<List<AiPlaceSuggestionDto>>>> AiSuggest(
+        public async Task<ActionResult<ApiResponse<AiSuggestResultDto>>> AiSuggest(
     int tripId, [FromBody] AiSuggestRequest dto)
         {
             if (!TryGetUserId(out int userId))
@@ -310,7 +311,7 @@ namespace TravelApi.Controllers
             if (!result.IsSuccess)
                 return BadRequest(ErrorResponse.BadRequest(result.Error!));
 
-            return Ok(ApiResponse<List<AiPlaceSuggestionDto>>.SuccessResponse(result.Data!));
+            return Ok(ApiResponse<AiSuggestResultDto>.SuccessResponse(result.Data!));
         }
 
         public record AiSuggestRequest(string Prompt);
