@@ -32,6 +32,7 @@ namespace Infrastructure
         public DbSet<UserFollow> UserFollows => Set<UserFollow>();
 
         public DbSet<TripNote> TripNotes => Set<TripNote>();
+        public DbSet<Review> Reviews => Set<Review>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -201,6 +202,38 @@ namespace Infrastructure
                 // Images - NotMapped (загружаются отдельно через Images таблицу)
                 e.Ignore(x => x.Images);
             });
+
+
+            b.Entity<Review>(e =>
+            {
+                e.ToTable("review");
+                e.HasKey(x => x.ReviewId);
+
+                e.Property(x => x.Rating)
+                    .IsRequired();
+
+                e.Property(x => x.Comment)
+                    .HasColumnType("nvarchar(max)");
+
+                // Один отзыв на место от пользователя — уникальный индекс
+                e.HasIndex(x => new { x.PlaceId, x.UserId })
+                    .IsUnique()
+                    .HasDatabaseName("ix_review_place_user");
+
+                e.HasIndex(x => x.PlaceId)
+                    .HasDatabaseName("ix_review_place");
+
+                e.HasOne(x => x.Place)
+                    .WithMany(p => p.Reviews)        
+                    .HasForeignKey(x => x.PlaceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
 
             b.Entity<CategoryTag>(e =>
             {
