@@ -504,6 +504,46 @@ namespace Infrastructure.Migrations
                     b.ToTable("refresh_token", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Review", b =>
+                {
+                    b.Property<int>("ReviewId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReviewId"));
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PlaceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ReviewId");
+
+                    b.HasIndex("PlaceId")
+                        .HasDatabaseName("ix_review_place");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("PlaceId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_review_place_user");
+
+                    b.ToTable("review", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.SavedPlace", b =>
                 {
                     b.Property<int>("UserId")
@@ -1000,6 +1040,25 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Review", b =>
+                {
+                    b.HasOne("Domain.Entities.Place", "Place")
+                        .WithMany("Reviews")
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Place");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.SavedPlace", b =>
                 {
                     b.HasOne("Domain.Entities.Place", "Place")
@@ -1125,6 +1184,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Moods");
 
                     b.Navigation("Posts");
+
+                    b.Navigation("Reviews");
 
                     b.Navigation("SavedByUsers");
 

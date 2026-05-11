@@ -27,6 +27,7 @@ namespace Application.Common.Interfaces
 
         DbSet<UserFollow> UserFollows { get;  }
         DbSet<TripNote> TripNotes { get; }
+        DbSet<Review> Reviews { get; }
         DbSet<Budget> Budgets { get; }
         DbSet<Expense> Expenses { get; }
         DbSet<TripDestination> TripDestinations { get; }
