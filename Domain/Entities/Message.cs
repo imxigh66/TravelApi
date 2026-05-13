@@ -1,0 +1,24 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Domain.Entities
+{
+    public class Message
+    {
+        public int MessageId { get; set; }
+        public int ConversationId { get; set; }
+        public int SenderId { get; set; }
+
+        public string Content { get; set; } = null!;
+
+        public bool IsRead { get; set; } = false;
+        public DateTime CreatedAt { get; set; }
+
+        // Navigation
+        public Conversation Conversation { get; set; } = null!;
+        public User Sender { get; set; } = null!;
+    }
+}

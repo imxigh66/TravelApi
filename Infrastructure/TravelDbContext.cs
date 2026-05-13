@@ -38,6 +38,11 @@ namespace Infrastructure
 
         public DbSet<Budget> Budgets => Set<Budget>();
         public DbSet<Expense> Expenses => Set<Expense>();
+
+        public DbSet<Conversation> Conversations => Set<Conversation>();
+        public DbSet<Message> Messages => Set<Message>();
+        public DbSet<TripMessage> TripMessages => Set<TripMessage>();
+        public DbSet<TripMember> TripMembers => Set<TripMember>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -537,6 +542,94 @@ namespace Infrastructure
                  .WithMany(t => t.Notes)
                  .HasForeignKey(x => x.TripId)
                  .OnDelete(DeleteBehavior.Cascade);
+            });
+
+
+            b.Entity<Conversation>(e =>
+            {
+                e.ToTable("conversation");
+                e.HasKey(x => x.ConversationId);
+                e.Property(x => x.LastMessageText).HasMaxLength(200);
+
+                e.HasIndex(x => new { x.User1Id, x.User2Id })
+                    .IsUnique()
+                    .HasDatabaseName("ix_conversation_users_unique");
+
+                e.HasOne(x => x.User1)
+                    .WithMany()
+                    .HasForeignKey(x => x.User1Id)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.User2)
+                    .WithMany()
+                    .HasForeignKey(x => x.User2Id)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<Message>(e =>
+            {
+                e.ToTable("message");
+                e.HasKey(x => x.MessageId);
+                e.Property(x => x.Content).IsRequired();
+                e.Property(x => x.IsRead).HasDefaultValue(false);
+
+                e.HasIndex(x => new { x.ConversationId, x.CreatedAt })
+                    .HasDatabaseName("ix_message_conv_created");
+
+                e.HasOne(x => x.Conversation)
+                    .WithMany(c => c.Messages)
+                    .HasForeignKey(x => x.ConversationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.Sender)
+                    .WithMany()
+                    .HasForeignKey(x => x.SenderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<TripMessage>(e =>
+            {
+                e.ToTable("trip_message");
+                e.HasKey(x => x.TripMessageId);
+                e.Property(x => x.Content).IsRequired();
+
+                e.HasIndex(x => x.TripId)
+                    .HasDatabaseName("ix_trip_message_trip");
+
+                e.HasIndex(x => new { x.TripId, x.CreatedAt })
+                    .HasDatabaseName("ix_trip_message_trip_created");
+
+                e.HasOne(x => x.Trip)
+                    .WithMany()
+                    .HasForeignKey(x => x.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.Sender)
+                    .WithMany()
+                    .HasForeignKey(x => x.SenderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<TripMember>(e =>
+            {
+                e.ToTable("trip_member");
+                e.HasKey(x => new { x.TripId, x.UserId });
+
+                e.Property(x => x.Role)
+                       .HasDefaultValue(TripMemberRole.Owner);
+
+                e.HasIndex(x => x.TripId).HasDatabaseName("ix_trip_member_trip");
+                e.HasIndex(x => x.UserId).HasDatabaseName("ix_trip_member_user");
+
+                e.HasOne(x => x.Trip)
+          .WithMany(x=>x.TripMembers)
+          .HasForeignKey(x => x.TripId)
+          .OnDelete(DeleteBehavior.Cascade);      
+
+                e.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
         }
     }

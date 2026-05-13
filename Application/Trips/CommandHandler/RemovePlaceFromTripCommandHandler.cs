@@ -1,6 +1,8 @@
 ﻿using Application.Common.Interfaces;
 using Application.Common.Models;
+using Application.DTO.Trips;
 using Application.Trips.Commands;
+using Domain.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -26,7 +28,10 @@ namespace Application.Trips.CommandHandler
             if (trip == null)
                 return OperationResult<bool>.Failure("Trip not found.");
 
-            if (trip.OwnerId != request.UserId)
+            var member = await _context.TripMembers
+    .FirstOrDefaultAsync(m => m.TripId == request.TripId && m.UserId == request.UserId, cancellationToken);
+
+            if (member is null || member.Role == TripMemberRole.Viewer)
                 return OperationResult<bool>.Failure("Access denied.");
 
             var tripPlace = await _context.TripPlaces

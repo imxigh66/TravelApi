@@ -29,7 +29,10 @@ namespace Application.Trips.CommandHandler
             if (trip == null)
                 return OperationResult<TripPlaceDto>.Failure("Trip not found.");
 
-            if (trip.OwnerId != request.UserId)
+            var member = await _context.TripMembers
+    .FirstOrDefaultAsync(m => m.TripId == request.TripId && m.UserId == request.UserId, cancellationToken);
+
+            if (member is null || member.Role == TripMemberRole.Viewer)
                 return OperationResult<TripPlaceDto>.Failure("Access denied.");
 
             var tripPlaces = await _context.TripPlaces

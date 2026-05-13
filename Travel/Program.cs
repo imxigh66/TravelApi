@@ -21,6 +21,7 @@ using System.Text;
 using TravelApi.Middleware;
 using System.Text.Json;
 using Infrastructure.ExternalServices.AI;
+using TravelApi.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,9 +68,13 @@ builder.Services.AddMediatR(configuration =>
     configuration.RegisterServicesFromAssembly(typeof(RegisterCommandHandler).Assembly);
 });
 
+builder.Services.AddSignalR();
+
+
 builder.Services.AddValidatorsFromAssembly(typeof(RegisterCommand).Assembly);
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+builder.Services.AddSingleton<PresenceTracker>();
 
 // ============= JWT AUTHENTICATION =============
 var jwtKey = builder.Configuration["Jwt:Key"]!;
@@ -93,6 +98,21 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ClockSkew = TimeSpan.Zero // Убрать 5-минутный запас
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) &&
+                path.StartsWithSegments("/hubs/chat"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -158,7 +178,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.MapHub<ChatHub>("/hubs/chat");
 app.MapControllers();
 
 app.Run();
