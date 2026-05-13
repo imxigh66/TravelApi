@@ -45,6 +45,22 @@ namespace Application.Comments.CommandHandler
 
             var user = await _context.Users.FindAsync(new object[] { request.UserId }, cancellationToken);
 
+            // Уведомление владельцу поста (не себе)
+            if (post.UserId != request.UserId)
+            {
+                var actor = await _context.Users.FindAsync(new object[] { request.UserId }, cancellationToken);
+                _context.Notifications.Add(new Domain.Entities.Notification
+                {
+                    RecipientId = post.UserId,
+                    ActorId = request.UserId,
+                    Type = Domain.Enum.NotificationType.PostCommented,
+                    Message = $"прокомментировал(а) ваш пост",
+                    Link = $"/posts/{post.PostId}",
+                    CreatedAt = DateTime.UtcNow,
+                });
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
             return OperationResult<CommentDto>.Success(new CommentDto
             {
                 CommentId = comment.CommentId,

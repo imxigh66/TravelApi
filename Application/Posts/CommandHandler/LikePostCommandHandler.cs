@@ -49,6 +49,20 @@ namespace Application.Posts.CommandHandler
             post.LikesCount += 1;
 
             await _context.SaveChangesAsync(cancellationToken);
+            // Уведомление владельцу поста (не себе)
+            if (post.UserId != request.UserId)
+            {
+                _context.Notifications.Add(new Domain.Entities.Notification
+                {
+                    RecipientId = post.UserId,
+                    ActorId = request.UserId,
+                    Type = Domain.Enum.NotificationType.PostLiked,
+                    Message = $"лайкнул(а) ваш пост",
+                    Link = $"/posts/{post.PostId}",
+                    CreatedAt = DateTime.UtcNow,
+                });
+                await _context.SaveChangesAsync(cancellationToken);
+            }
             _logger.LogInformation("User {UserId} liked post {PostId}.", request.UserId, request.PostId);
             return true;
         }

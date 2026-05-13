@@ -43,6 +43,8 @@ namespace Infrastructure
         public DbSet<Message> Messages => Set<Message>();
         public DbSet<TripMessage> TripMessages => Set<TripMessage>();
         public DbSet<TripMember> TripMembers => Set<TripMember>();
+
+        public DbSet<Notification> Notifications => Set<Notification>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -629,6 +631,32 @@ namespace Infrastructure
                 e.HasOne(x => x.User)
                     .WithMany()
                     .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            b.Entity<Notification>(e =>
+            {
+                e.ToTable("notification");
+                e.HasKey(x => x.NotificationId);
+                e.Property(x => x.Message).HasMaxLength(300).IsRequired();
+                e.Property(x => x.Link).HasMaxLength(200);
+                e.Property(x => x.IsRead).HasDefaultValue(false);
+
+                e.HasIndex(x => x.RecipientId)
+                    .HasDatabaseName("ix_notification_recipient");
+                e.HasIndex(x => new { x.RecipientId, x.IsRead })
+                    .HasDatabaseName("ix_notification_recipient_unread");
+                e.HasIndex(x => x.CreatedAt)
+                    .HasDatabaseName("ix_notification_created");
+
+                e.HasOne(x => x.Recipient)
+                    .WithMany()
+                    .HasForeignKey(x => x.RecipientId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.Actor)
+                    .WithMany()
+                    .HasForeignKey(x => x.ActorId)
                     .OnDelete(DeleteBehavior.NoAction);
             });
         }

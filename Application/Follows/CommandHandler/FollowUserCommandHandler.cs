@@ -49,6 +49,17 @@ namespace Application.Follows.CommandHandler
             _context.UserFollows.Add(follow);
             await _context.SaveChangesAsync(cancellationToken);
 
+            _context.Notifications.Add(new Domain.Entities.Notification
+            {
+                RecipientId = request.FollowingId,   // кого подписались
+                ActorId = request.FollowerId,    // кто подписался
+                Type = Domain.Enum.NotificationType.NewFollower,
+                Message = "начал(а) на вас подписываться",
+                Link = $"/profile/{request.FollowerId}",
+                CreatedAt = DateTime.UtcNow,
+            });
+            await _context.SaveChangesAsync(cancellationToken);
+
             return OperationResult<bool>.Success(true);
         }
     }
