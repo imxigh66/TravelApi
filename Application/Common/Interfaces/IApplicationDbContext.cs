@@ -35,6 +35,7 @@ namespace Application.Common.Interfaces
         DbSet<Message> Messages { get; }
         DbSet<TripMessage> TripMessages { get; }
         DbSet<TripMember> TripMembers { get; }
+        DbSet<Notification> Notifications { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

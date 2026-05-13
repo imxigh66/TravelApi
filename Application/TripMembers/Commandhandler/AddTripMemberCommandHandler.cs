@@ -70,6 +70,17 @@ namespace Application.TripMembers.Commandhandler
             _context.TripMembers.Add(member);
             await _context.SaveChangesAsync(cancellationToken);
 
+            _context.Notifications.Add(new Domain.Entities.Notification
+            {
+                RecipientId = request.TargetUserId,
+                ActorId = request.OwnerId,
+                Type = Domain.Enum.NotificationType.TripInvite,
+                Message = "добавил(а) вас в поездку",
+                Link = $"/trips/{request.TripId}",
+                CreatedAt = DateTime.UtcNow,
+            });
+            await _context.SaveChangesAsync(cancellationToken);
+
             return OperationResult<TripMemberDto>.Success(new TripMemberDto
             {
                 UserId = targetUser.UserId,

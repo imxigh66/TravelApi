@@ -57,7 +57,25 @@ namespace Application.Places.CommandHandler
 
             await _context.SaveChangesAsync(cancellationToken);
 
-         
+            if (place.CreatedBy.HasValue)
+            {
+                var isApproved = request.Approve; // true/false
+                _context.Notifications.Add(new Domain.Entities.Notification
+                {
+                    RecipientId = place.CreatedBy.Value,
+                    ActorId = null,   // системное
+                    Type = isApproved
+                        ? Domain.Enum.NotificationType.PlaceApproved
+                        : Domain.Enum.NotificationType.PlaceRejected,
+                    Message = isApproved
+                        ? $"Ваше место «{place.Name}» одобрено модератором"
+                        : $"Ваше место «{place.Name}» отклонено",
+                    Link = isApproved ? $"/places/{place.PlaceId}" : null,
+                    CreatedAt = DateTime.UtcNow,
+                });
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
             var creator = place.CreatedBy.HasValue
                 ? await _context.Users.FindAsync(place.CreatedBy.Value)
                 : null;
