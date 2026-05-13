@@ -33,6 +33,8 @@ namespace Application.Common.Interfaces
         DbSet<TripDestination> TripDestinations { get; }
         DbSet<Conversation> Conversations { get; }
         DbSet<Message> Messages { get; }
+        DbSet<TripMessage> TripMessages { get; }
+        DbSet<TripMember> TripMembers { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

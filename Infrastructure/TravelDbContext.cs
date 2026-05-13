@@ -41,6 +41,8 @@ namespace Infrastructure
 
         public DbSet<Conversation> Conversations => Set<Conversation>();
         public DbSet<Message> Messages => Set<Message>();
+        public DbSet<TripMessage> TripMessages => Set<TripMessage>();
+        public DbSet<TripMember> TripMembers => Set<TripMember>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -583,6 +585,51 @@ namespace Infrastructure
                     .WithMany()
                     .HasForeignKey(x => x.SenderId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<TripMessage>(e =>
+            {
+                e.ToTable("trip_message");
+                e.HasKey(x => x.TripMessageId);
+                e.Property(x => x.Content).IsRequired();
+
+                e.HasIndex(x => x.TripId)
+                    .HasDatabaseName("ix_trip_message_trip");
+
+                e.HasIndex(x => new { x.TripId, x.CreatedAt })
+                    .HasDatabaseName("ix_trip_message_trip_created");
+
+                e.HasOne(x => x.Trip)
+                    .WithMany()
+                    .HasForeignKey(x => x.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.Sender)
+                    .WithMany()
+                    .HasForeignKey(x => x.SenderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<TripMember>(e =>
+            {
+                e.ToTable("trip_member");
+                e.HasKey(x => new { x.TripId, x.UserId });
+
+                e.Property(x => x.Role)
+                       .HasDefaultValue(TripMemberRole.Owner);
+
+                e.HasIndex(x => x.TripId).HasDatabaseName("ix_trip_member_trip");
+                e.HasIndex(x => x.UserId).HasDatabaseName("ix_trip_member_user");
+
+                e.HasOne(x => x.Trip)
+          .WithMany(x=>x.TripMembers)
+          .HasForeignKey(x => x.TripId)
+          .OnDelete(DeleteBehavior.Cascade);      
+
+                e.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
         }
     }

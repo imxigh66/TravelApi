@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces;
 using Application.DTO.Messages;
+using Application.DTO.Trips;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -102,6 +103,66 @@ namespace TravelApi.Hubs
             await Clients.Group($"conv_{conversationId}").SendAsync("ReceiveMessage", dto);
         }
 
+
+        // Клиент вызывает при открытии чата поездки
+        public async Task JoinTripChat(int tripId)
+        {
+            var userId = GetUserId();
+
+            // Проверяем доступ
+            var trip = await _context.Trips.FindAsync(tripId);
+            if (trip is null) return;
+            var isMember = await _context.TripMembers
+    .AnyAsync(m => m.TripId == tripId && m.UserId == userId);
+            if (!trip.IsPublic && !isMember) return;
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"trip_{tripId}");
+        }
+
+        public async Task LeaveTripChat(int tripId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"trip_{tripId}");
+        }
+
+
+        // Клиент вызывает для отправки сообщения в чат поездки
+        public async Task SendTripMessage(int tripId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return;
+
+            var userId = GetUserId();
+
+            var trip = await _context.Trips.FindAsync(tripId);
+            if (trip is null) return;
+            if (!trip.IsPublic && trip.OwnerId != userId) return;
+
+            var message = new Domain.Entities.TripMessage
+            {
+                TripId = tripId,
+                SenderId = userId,
+                Content = content,
+                CreatedAt = DateTime.UtcNow,
+            };
+
+            _context.TripMessages.Add(message);
+            await _context.SaveChangesAsync();
+
+            var sender = await _context.Users.FindAsync(userId);
+
+            var dto = new TripMessageDto
+            {
+                TripMessageId = message.TripMessageId,
+                TripId = tripId,
+                SenderId = userId,
+                SenderUsername = sender?.Username ?? "",
+                SenderProfilePicture = sender?.ProfilePicture,
+                Content = content,
+                CreatedAt = message.CreatedAt,
+            };
+
+            // Шлём всем в комнате трипа
+            await Clients.Group($"trip_{tripId}").SendAsync("ReceiveTripMessage", dto);
+        }
         private int GetUserId()
         {
             var claim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value

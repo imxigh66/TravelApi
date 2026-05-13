@@ -44,6 +44,16 @@ namespace Application.Trips.CommandHandler
             };
 
             _context.Trips.Add(trip);
+
+            await _context.SaveChangesAsync(cancellationToken);
+            _context.TripMembers.Add(new TripMember
+            {
+                TripId = trip.TripId,   
+                UserId = request.OwnerId,
+                Role = TripMemberRole.Owner,
+                InvitedAt = DateTime.UtcNow,
+            });
+
             await _context.SaveChangesAsync(cancellationToken);
 
             var tripDto = new TripDto

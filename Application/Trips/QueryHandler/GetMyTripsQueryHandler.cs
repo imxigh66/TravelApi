@@ -23,7 +23,8 @@ namespace Application.Trips.QueryHandler
         public async Task<List<TripDto>> Handle(GetMyTripsQuery request, CancellationToken cancellationToken)
         {
             var trips = await _context.Trips
-                .Where(t => t.OwnerId == request.OwnerId)
+                .Where(t => t.OwnerId == request.OwnerId ||
+                        t.TripMembers.Any(tm => tm.UserId == request.OwnerId))
                 .OrderByDescending(t => t.CreatedAt)
                 .Include(t => t.TripPlaces)
                 .Include(t => t.Destinations)   

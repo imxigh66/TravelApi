@@ -26,6 +26,7 @@ namespace Domain.Entities
         public ICollection<TripPlace> TripPlaces { get; set; } = new List<TripPlace>();
         public ICollection<TripNote> Notes { get; set; } = new List<TripNote>();
         public ICollection<TripDestination> Destinations { get; set; } = new List<TripDestination>();
+        public ICollection<TripMember> TripMembers { get; set; }
     }
 
 }
